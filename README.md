@@ -1,6 +1,6 @@
 # manageships-clone
 
-A static visual clone of [manageships.com](https://manageships.com) (Esea Venture Ship Management LLC), rebuilt from the live site's content and design tokens.
+A static visual clone of [manageships.com](https://manageships.com) (Sea Corazon Ship Management - FZCO), rebuilt from the live site's content and design tokens.
 
 ## Origin
 
@@ -41,4 +41,4 @@ python3 -m http.server 8080
 - ⚠️ Forms are static stubs (original posts to WP + reCAPTCHA)
 - ⚠️ Sub-pages (services detail, contact) not cloned — links point to sections
 
-> Note: content and images belong to Esea Venture Ship Management LLC. This clone is for local study/development only.
+> Note: content and images belong to Sea Corazon Ship Management - FZCO. This clone is for local study/development only.
