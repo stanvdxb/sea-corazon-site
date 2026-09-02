@@ -120,6 +120,33 @@
     select(initial < 0 ? 0 : initial);
   });
 
+  /* ---- theme toggle ------------------------------------------------------
+     The stylesheet already follows the system preference. The button lets a
+     visitor override it; the choice is remembered and applied before first
+     paint by the inline script in <head>. */
+  var themeBtn = document.querySelector('.theme-toggle');
+  if (themeBtn) {
+    var root = document.documentElement;
+    var systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+    var isDark = function () {
+      var t = root.getAttribute('data-theme');
+      return t ? t === 'dark' : systemDark.matches;
+    };
+    var reflect = function () {
+      var dark = isDark();
+      themeBtn.setAttribute('aria-pressed', String(dark));
+      themeBtn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+    };
+    themeBtn.addEventListener('click', function () {
+      var next = isDark() ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+      reflect();
+    });
+    systemDark.addEventListener('change', reflect);
+    reflect();
+  }
+
   /* ---- scroll to top ---------------------------------------------------- */
   var toTop = document.querySelector('.to-top');
   if (toTop) {

@@ -55,6 +55,8 @@ Every foreground/background pair used for text is ≥ 4.5 : 1 (white on `--blue`
 
 **Breakpoints:** 1024 px (nav collapses) and 767 px (single column). Every interactive element is at least 44 × 44 px at every width. On narrow screens the service-page sidebar follows the article instead of preceding it.
 
+**Dark theme:** follows the system preference automatically; the header toggle overrides it and remembers the choice. Only the role tokens (`--bg`, `--surface`, `--heading`, `--link`, `--ink*`) are remapped — brand colours don't change — and every dark text pair is ≥ 4.5 : 1. The masthead swaps to the light lock-up of the logo.
+
 **Motion:** `prefers-reduced-motion` removes decorative transitions (image zoom, fades) but keeps state changes — accordion, tabs and carousel still switch, they just don't animate.
 
 **Components** (`style.css` sections 6–21): header, home hero, inner-page banner, statement/display/CTA bands, split image+copy, cards (`.card--accent` for the alternating blue variant), chip cards, feature grid with inline SVG icons, checklist, accordion, tabs, carousel (scroll-snap + dots; replaces Swiper), sidebar layout, forms, footer. Photographic sections take a colour wash modifier (`.wash--navy`, `.wash--radial`, `.wash--sea`, `.wash--fade`).
@@ -71,9 +73,8 @@ The three forms (callback card, footer enquiry, contact page) are intercepted by
 
 ## Known and deliberate
 
-- **No postal address is shown.** The previous "Office 1401, Prism Tower" address was retired at the client's request and no replacement was supplied. The footer and contact page show phone and email only; the contact-page map is centred on Business Bay, Dubai. Add the new address to `contact.html` and the footer of every page (one `<li>` in `.footer__contact`).
+- The address (Office 204, Aspect Tower, Business Bay, Dubai) appears in the footer of every page and on `contact.html`; the contact map is centred on Aspect Tower. Contact email is ops@corazon-tech.com.
 - PNG/JPEG fallbacks under `assets/img/` are the original 48 MB; browsers that understand WebP (≈97 %) never request them. Delete the fallbacks to shrink the deploy if legacy support isn't needed.
-- No dark theme. The token system makes one cheap to add.
 
 ## Checking it
 
