@@ -100,8 +100,24 @@ re-checks 80/443 after every deploy. Hetzner's separate *cloud* firewall lives i
 is outside these scripts: if one is attached, it must also allow 80 and 443.
 
 **Forms.** `POST /api/contact` is handled by `deploy/contact-api/contact_api.py` (standard library only)
-and emails `ops@corazon-tech.com` over SMTP. Real credentials live in `/etc/contact-api.env` on the
-server, root-only, never in git.
+and delivers to `ops@corazon-tech.com` through **Microsoft Graph** — OAuth client credentials over HTTPS,
+so it needs neither port 25 (blocked by Hetzner) nor SMTP basic auth (being retired by Microsoft during
+2026). An SMTP transport remains available via `MAIL_TRANSPORT=smtp`.
+
+Credentials live in `/etc/contact-api.env` on the server, root-only, never in git. Create it by running
+`sudo bash deploy/set-credentials.sh` **on the server** — it prompts for each value, reads the secret with
+echo off, writes the file 0600, then proves the credentials by fetching a token and sending one real test
+message. Nothing is passed as an argument, so nothing reaches shell history or a process listing.
+
+The Entra app registration needs the **application** permission `Mail.Send` with admin consent. Restrict
+it to the single mailbox with an [application access policy](https://learn.microsoft.com/graph/auth-limit-mailbox-access) —
+without one, `Mail.Send` grants the app access to *every* mailbox in the tenant:
+
+```powershell
+New-ApplicationAccessPolicy -AppId <client-id> `
+  -PolicyScopeGroupId ops@corazon-tech.com -AccessRight RestrictAccess `
+  -Description "Website contact form: this mailbox only"
+```
 
 ## Checking it
 

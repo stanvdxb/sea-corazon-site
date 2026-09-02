@@ -5,15 +5,28 @@ POST /api/contact  (JSON or form-encoded)  ->  200 {"ok": true}
                                             ->  4xx {"ok": false, "error": "..."}
 Validates, drops bots via the honeypot, and emails the submission over SMTP.
 Runs behind nginx on 127.0.0.1:8787 (see contact-api.service); nginx does rate limiting."""
-import json, os, re, smtplib, ssl, sys, time
+import json, os, re, smtplib, ssl, sys, time, threading, urllib.parse, urllib.request, urllib.error
 from email.message import EmailMessage
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs
 
 BIND = os.environ.get("BIND", "127.0.0.1"); PORT = int(os.environ.get("PORT", "8787"))
+
+# graph (Microsoft 365, OAuth client credentials — the supported path) or smtp.
+TRANSPORT = os.environ.get("MAIL_TRANSPORT", "graph").strip().lower()
+
+# --- Microsoft Graph -------------------------------------------------------
+GRAPH_TENANT = os.environ.get("GRAPH_TENANT_ID", "")
+GRAPH_CLIENT = os.environ.get("GRAPH_CLIENT_ID", "")
+GRAPH_SECRET = os.environ.get("GRAPH_CLIENT_SECRET", "")
+GRAPH_SENDER = os.environ.get("GRAPH_SENDER", "")     # mailbox the mail is sent AS
+
+# --- SMTP (alternative) ----------------------------------------------------
 SMTP_HOST = os.environ.get("SMTP_HOST", ""); SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER = os.environ.get("SMTP_USER", ""); SMTP_PASS = os.environ.get("SMTP_PASS", "")
-MAIL_TO = os.environ.get("MAIL_TO", "ops@corazon-tech.com"); MAIL_FROM = os.environ.get("MAIL_FROM", MAIL_TO)
+
+MAIL_TO = os.environ.get("MAIL_TO", "ops@corazon-tech.com")
+MAIL_FROM = os.environ.get("MAIL_FROM", GRAPH_SENDER or MAIL_TO)
 ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "https://corazon-tech.com")
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$")
@@ -44,23 +57,82 @@ def header_safe(v, limit=120):
     """A header value may not carry CR/LF, or a submitted name could inject headers."""
     return re.sub(r"[\r\n]", " ", (v or ""))[:limit].strip()
 
-def send(p, ip):
+def body_text(p, ip):
+    return (f"Name:    {p['name']}\n"
+            f"Phone:   {p['phone'] or '-'}\n"
+            f"Email:   {p['email'] or '-'}\n"
+            f"Form:    {p['form'] or '-'}  on  {p['page'] or '-'}\n"
+            f"IP:      {ip}\n\n"
+            f"{p['message'] or '(no message - call back requested)'}\n")
+
+# ---------------------------------------------------------------- Graph ----
+_token = {"value": None, "expires": 0.0}
+_token_lock = threading.Lock()
+
+def graph_token():
+    """Client-credentials token, cached until shortly before it expires."""
+    with _token_lock:
+        if _token["value"] and time.time() < _token["expires"] - 120:
+            return _token["value"]
+        data = urllib.parse.urlencode({
+            "client_id": GRAPH_CLIENT,
+            "client_secret": GRAPH_SECRET,
+            "grant_type": "client_credentials",
+            "scope": "https://graph.microsoft.com/.default",
+        }).encode()
+        req = urllib.request.Request(
+            f"https://login.microsoftonline.com/{GRAPH_TENANT}/oauth2/v2.0/token",
+            data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+        with urllib.request.urlopen(req, timeout=20, context=ssl.create_default_context()) as r:
+            tok = json.loads(r.read())
+        _token["value"] = tok["access_token"]
+        _token["expires"] = time.time() + int(tok.get("expires_in", 3600))
+        return _token["value"]
+
+def send_graph(p, ip):
+    payload = {
+        "message": {
+            "subject": header_safe(f"Website enquiry from {p['name']}"),
+            "body": {"contentType": "Text", "content": body_text(p, ip)},
+            "toRecipients": [{"emailAddress": {"address": MAIL_TO}}],
+        },
+        "saveToSentItems": "false",
+    }
+    if p["email"] and EMAIL_RE.match(p["email"]):
+        payload["message"]["replyTo"] = [{"emailAddress": {"address": p["email"]}}]
+    sender = urllib.parse.quote(GRAPH_SENDER)
+    req = urllib.request.Request(
+        f"https://graph.microsoft.com/v1.0/users/{sender}/sendMail",
+        data=json.dumps(payload).encode(),
+        headers={"Authorization": "Bearer " + graph_token(), "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=25, context=ssl.create_default_context()) as r:
+            if r.status not in (202, 200):
+                raise RuntimeError(f"graph returned {r.status}")
+    except urllib.error.HTTPError as e:
+        detail = e.read()[:400].decode("utf-8", "replace")
+        if e.code in (401, 403):
+            with _token_lock:
+                _token["value"] = None          # force a fresh token next time
+        raise RuntimeError(f"graph {e.code}: {detail}") from None
+
+# ----------------------------------------------------------------- SMTP ----
+def send_smtp(p, ip):
     m = EmailMessage()
     m["Subject"] = header_safe(f"Website enquiry from {p['name']}")
     m["From"] = MAIL_FROM; m["To"] = MAIL_TO
     if p["email"] and EMAIL_RE.match(p["email"]): m["Reply-To"] = header_safe(p["email"], 160)
-    body = (f"Name:    {p['name']}\nPhone:   {p['phone'] or '-'}\nEmail:   {p['email'] or '-'}\n"
-            f"Form:    {p['form'] or '-'}  on  {p['page'] or '-'}\nIP:      {ip}\n\n{p['message'] or '(no message — call back requested)'}\n")
-    m.set_content(body)
-    ctx = ssl.create_default_context()          # verifies the relay's certificate
+    m.set_content(body_text(p, ip))
+    ctx = ssl.create_default_context()
     ctx.check_hostname = True
     ctx.verify_mode = ssl.CERT_REQUIRED
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as s:
-        s.ehlo()
-        s.starttls(context=ctx)                  # refuses to send in the clear
-        s.ehlo()
-        if SMTP_USER: s.login(SMTP_USER, SMTP_PASS)
-        s.send_message(m)
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as srv:
+        srv.ehlo(); srv.starttls(context=ctx); srv.ehlo()
+        if SMTP_USER: srv.login(SMTP_USER, SMTP_PASS)
+        srv.send_message(m)
+
+def send(p, ip):
+    (send_graph if TRANSPORT == "graph" else send_smtp)(p, ip)
 
 class H(BaseHTTPRequestHandler):
     server_version = "contact-api/1.0"
@@ -96,10 +168,37 @@ class H(BaseHTTPRequestHandler):
         self._json(405, {"ok": False, "error": "method not allowed"})
     def log_message(self, *a): pass
 
-if __name__ == "__main__":
-    missing = [k for k in ("SMTP_HOST",) if not os.environ.get(k)]
+def preflight():
+    """Refuse to start unconfigured: a per-request failure is worse than not starting."""
+    if TRANSPORT == "graph":
+        missing = [k for k, v in (("GRAPH_TENANT_ID", GRAPH_TENANT), ("GRAPH_CLIENT_ID", GRAPH_CLIENT),
+                                  ("GRAPH_CLIENT_SECRET", GRAPH_SECRET), ("GRAPH_SENDER", GRAPH_SENDER)) if not v]
+    elif TRANSPORT == "smtp":
+        missing = [k for k, v in (("SMTP_HOST", SMTP_HOST),) if not v]
+    else:
+        log(f"REFUSING TO START - MAIL_TRANSPORT must be 'graph' or 'smtp', got {TRANSPORT!r}"); sys.exit(78)
     if missing:
-        log("REFUSING TO START — missing environment:", ", ".join(missing), "(set them in /etc/contact-api.env)")
-        sys.exit(78)   # EX_CONFIG
-    log(f"contact-api listening on {BIND}:{PORT}, mail to {MAIL_TO} via {SMTP_HOST}:{SMTP_PORT}")
+        log("REFUSING TO START - missing in /etc/contact-api.env:", ", ".join(missing)); sys.exit(78)
+
+if __name__ == "__main__":
+    if "--selftest" in sys.argv:
+        # Proves the credentials work, without a web server and without printing them.
+        preflight()
+        try:
+            if TRANSPORT == "graph":
+                graph_token(); log("OK: token acquired from Microsoft Entra")
+                send({"name": "contact-api self test", "phone": "", "email": "",
+                      "message": "This confirms the website contact form can deliver mail.",
+                      "form": "selftest", "page": "-"}, "localhost")
+            else:
+                send_smtp({"name": "contact-api self test", "phone": "", "email": "",
+                           "message": "This confirms the website contact form can deliver mail.",
+                           "form": "selftest", "page": "-"}, "localhost")
+            log(f"OK: test message accepted for delivery to {MAIL_TO}")
+            sys.exit(0)
+        except Exception as e:
+            log("SELF TEST FAILED:", repr(e)); sys.exit(1)
+    preflight()
+    log(f"contact-api on {BIND}:{PORT} - transport={TRANSPORT}, to={MAIL_TO}"
+        + (f", as={GRAPH_SENDER}" if TRANSPORT == "graph" else f" via {SMTP_HOST}:{SMTP_PORT}"))
     ThreadingHTTPServer((BIND, PORT), H).serve_forever()
