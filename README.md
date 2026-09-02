@@ -79,6 +79,30 @@ The three forms (callback card, footer enquiry, contact page) are intercepted by
 - The address (Office 204, Aspect Tower, Business Bay, Dubai) appears in the footer of every page and on `contact.html`; the contact map is centred on Aspect Tower. Contact email is ops@corazon-tech.com.
 - PNG/JPEG fallbacks under `assets/img/` are the original 48 MB; browsers that understand WebP (≈97 %) never request them. Delete the fallbacks to shrink the deploy if legacy support isn't needed.
 
+## Server
+
+Deployment lives in `deploy/` and targets a Hetzner VPS running Ubuntu 24.04 LTS.
+
+| Script | Where | What it does |
+|---|---|---|
+| `deploy/server-setup.sh` | on the server, as root, once | Full OS upgrade, nginx, certbot, ufw, the form API, TLS in two stages |
+| `deploy/deploy.sh [target]` | from a workstation | Integrity check, rsync of the site only, then live verification over the internet |
+| `deploy/server-update.sh` | on the server, as root, periodically | Updates, certificate renewal, service/firewall/disk health, reboot check |
+
+**Updates.** Setup brings the server fully current, then installs `unattended-upgrades` so security
+patches apply on their own, with automatic reboot at 04:30 when a kernel or libc update needs one —
+nginx and `contact-api` are enabled at boot, so the site returns by itself. `fail2ban` guards SSH.
+Neither setup nor update ever reboots while you are watching; a pending reboot is reported instead.
+
+**Firewall.** `ufw` allows SSH, 80 and 443 — added *before* the firewall is enabled, so enabling can
+never lock out the session — and setup aborts if any of the three is missing afterwards. `deploy.sh`
+re-checks 80/443 after every deploy. Hetzner's separate *cloud* firewall lives in their web console and
+is outside these scripts: if one is attached, it must also allow 80 and 443.
+
+**Forms.** `POST /api/contact` is handled by `deploy/contact-api/contact_api.py` (standard library only)
+and emails `ops@corazon-tech.com` over SMTP. Real credentials live in `/etc/contact-api.env` on the
+server, root-only, never in git.
+
 ## Checking it
 
 ```bash
