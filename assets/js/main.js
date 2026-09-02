@@ -181,16 +181,57 @@
   }
 
   /* ---- forms ------------------------------------------------------------
-     The original posts to WordPress via Metform + reCAPTCHA. This clone has no
-     backend, so submissions are intercepted and acknowledged in place rather
-     than failing silently against a dead endpoint. */
-  document.querySelectorAll('form[data-clone-form]').forEach(function (form) {
+     Posts to /api/contact (deploy/contact-api on the server). Validation here
+     mirrors the server's; the status line under the button is aria-live so
+     screen readers hear the outcome. If the API is unreachable the visitor is
+     told how to reach us instead of being left guessing. */
+  var FALLBACK = 'We couldn\u2019t send your message. Please call +971 4 572 3303 or email ops@corazon-tech.com.';
+  document.querySelectorAll('form[data-contact-form]').forEach(function (form) {
+    var status = form.querySelector('.form-status');
+    var button = form.querySelector('button[type=submit]');
+    var say = function (text, isError) {
+      if (!status) return;
+      status.textContent = text;
+      status.classList.toggle('form-status--error', !!isError);
+      status.classList.toggle('form-status--ok', !isError && !!text);
+    };
+    var invalid = function (field, text) {
+      form.querySelectorAll('[aria-invalid]').forEach(function (f) { f.removeAttribute('aria-invalid'); });
+      if (field) { field.setAttribute('aria-invalid', 'true'); field.focus(); }
+      say(text, true);
+    };
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      var status = form.querySelector('.form-status');
-      if (status) {
-        status.textContent = 'This is a static clone — the form is not connected to a backend.';
-      }
+      var f = form.elements;
+      var name = (f.name && f.name.value || '').trim();
+      var phone = (f.phone && f.phone.value || '').trim();
+      var email = (f.email && f.email.value || '').trim();
+      if (name.length < 2) return invalid(f.name, 'Please enter your name.');
+      if (!phone && !email) return invalid(f.phone || f.email, 'Please give a phone number or an email address.');
+      if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) return invalid(f.email, 'That email address doesn\u2019t look right.');
+      if (f.consent && !f.consent.checked) return invalid(f.consent, 'Please agree to the terms and conditions.');
+      form.querySelectorAll('[aria-invalid]').forEach(function (x) { x.removeAttribute('aria-invalid'); });
+
+      var payload = {
+        name: name, phone: phone, email: email,
+        message: (f.message && f.message.value || '').trim(),
+        consent: f.consent ? f.consent.checked : true,
+        website: (f.website && f.website.value) || '',
+        form: form.getAttribute('data-form-name') || '',
+        page: location.pathname
+      };
+      button.disabled = true; say('Sending\u2026', false);
+      fetch(form.getAttribute('action') || '/api/contact', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      }).then(function (r) { return r.json().catch(function () { return { ok: r.ok }; }).then(function (d) { return { http: r.status, d: d }; }); })
+        .then(function (res) {
+          if (res.d && res.d.ok) { form.reset(); say('Thank you \u2014 we have your message and will contact you shortly.', false); }
+          else if (res.http === 422 && res.d && res.d.error) { say(res.d.error, true); }
+          else if (res.http === 429) { say('Too many messages in a short time. Please try again in a few minutes.', true); }
+          else { say(FALLBACK, true); }
+        })
+        .catch(function () { say(FALLBACK, true); })
+        .then(function () { button.disabled = false; });
     });
   });
 })();

@@ -752,7 +752,11 @@ textarea.field { min-height: 46px; resize: vertical; }
 .form-consent input { width: 22px; height: 22px; margin: 0; accent-color: var(--blue); flex: none; }
 .form-consent label { cursor: pointer; }
 .form-consent a { color: var(--blue); }
-.form-status { margin-top: 1em; font-size: 15px; }
+.form-status { margin-top: 1em; font-size: 15px; min-height: 1.4em; }
+.form-status--ok { color: var(--white); font-weight: 500; }
+.form-status--error { color: #FFD6D6; font-weight: 500; }
+.field[aria-invalid="true"] { outline: 2px solid #FFB4B4; outline-offset: 1px; }
+.btn[disabled] { opacity: .6; cursor: progress; }
 
 /* --------------------------------------------------------------------------
    19. Footer

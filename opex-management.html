@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alumni+Sans:wght@400;600&family=Heebo:wght@300;400&family=Roboto+Condensed:wght@300;400;500;600;700&display=swap">
-<link rel="stylesheet" href="assets/css/style.css?v=167b4cd3">
+<link rel="stylesheet" href="assets/css/style.css?v=ca7deeb7">
 </head>
 <body>
 <a class="skip-link" href="#content">Skip to content</a>
@@ -314,18 +314,19 @@
   <div class="container">
     <div class="footer-cta__panel">
       <h2 class="footer-cta__title">Leave us a message and we will contact you shortly</h2>
-      <form data-clone-form>
+      <form data-contact-form data-form-name="footer" method="post" action="/api/contact" novalidate>
         <div class="form-row">
-          <div><label class="visually-hidden" for="fc-name">Name</label><input class="field" id="fc-name" name="name" type="text" placeholder="Name"></div>
-          <div><label class="visually-hidden" for="fc-phone">Phone</label><input class="field" id="fc-phone" name="phone" type="tel" placeholder="Phone"></div>
-          <div><label class="visually-hidden" for="fc-email">Email</label><input class="field" id="fc-email" name="email" type="email" placeholder="Email"></div>
+          <div><label class="visually-hidden" for="fc-name">Name</label><input class="field" id="fc-name" name="name" type="text" placeholder="Name" required autocomplete="name"></div>
+          <div><label class="visually-hidden" for="fc-phone">Phone</label><input class="field" id="fc-phone" name="phone" type="tel" placeholder="Phone" autocomplete="tel"></div>
+          <div><label class="visually-hidden" for="fc-email">Email</label><input class="field" id="fc-email" name="email" type="email" placeholder="Email" autocomplete="email"></div>
         </div>
         <label class="visually-hidden" for="fc-message">Message</label>
         <textarea class="field" id="fc-message" name="message" rows="1" placeholder="Message"></textarea>
         <p class="form-consent">
-          <input id="fc-consent" name="consent" type="checkbox">
+          <input id="fc-consent" name="consent" type="checkbox" required>
           <label for="fc-consent">Agree on our <a href="privacy-policy.html">terms and condition</a> for using your submitted data?</label>
         </p>
+        <p class="visually-hidden" aria-hidden="true"><label for="hp-1">Leave this field empty</label><input id="hp-1" name="website" type="text" tabindex="-1" autocomplete="off"></p>
         <div class="text-center"><button class="btn btn--submit" type="submit">Request a call</button></div>
         <p class="form-status text-center" role="status" aria-live="polite"></p>
       </form>
@@ -385,6 +386,6 @@
 </footer>
 
 <button class="to-top" type="button" aria-label="Scroll to top">&#9650;</button>
-<script src="assets/js/main.js?v=66361dbd"></script>
+<script src="assets/js/main.js?v=22f90d3d"></script>
 </body>
 </html>

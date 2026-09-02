@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /.firecrawl/
 
-Sitemap: https://manageships.com/sitemap.xml
+Sitemap: https://corazon-tech.com/sitemap.xml
