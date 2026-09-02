@@ -13,11 +13,11 @@
 <meta name="theme-color" content="#002050" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0B1A2E" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
-<script>(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
+<script>(function(){var h=document.documentElement;try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")h.setAttribute("data-theme",t)}catch(e){}if("IntersectionObserver" in window&&!matchMedia("(prefers-reduced-motion: reduce)").matches){h.classList.add("js-reveal");setTimeout(function(){if(!window.__revealReady)h.classList.remove("js-reveal")},2500)}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alumni+Sans:wght@400;600&family=Heebo:wght@300;400&family=Roboto+Condensed:wght@300;400;500;600;700&display=swap">
-<link rel="stylesheet" href="assets/css/style.css?v=86fc6d25">
+<link rel="stylesheet" href="assets/css/style.css?v=167b4cd3">
 </head>
 <body>
 <a class="skip-link" href="#content">Skip to content</a>
@@ -78,7 +78,7 @@
   <!-- Hero band -->
   <section class="cta-band photo-section wash--navy" style="background-image:url('assets/img/bg-12-1200.webp')">
     <div class="container">
-      <div class="cta-band__inner">
+      <div class="cta-band__inner reveal reveal--left">
         <h1 class="cta-band__title">OPEX management: control of vessel operating costs</h1>
         <p class="cta-band__body">We manage the operating expenses of your vessels, from financial reporting and budgeting to vendor contracts and fuel use, to control and reduce cost.</p>
         <a class="btn btn--gold" href="ship-management-company.html">Find Out More</a>
@@ -100,7 +100,7 @@
             <li><a href="fleet-management-services.html">Fleet Management</a></li>
           </ul>
 
-          <div class="sidebar-card">
+          <div class="sidebar-card reveal">
             <h3 class="sidebar-card__title">Have Any Questions?</h3>
             <p>Ask us your questions and we will answer them promptly</p>
             <a class="btn btn--gold" href="contact.html">Contact Us</a>
@@ -141,7 +141,7 @@
 
   <!-- Display band -->
   <section class="band band--display photo-section wash--radial" style="background-image:url('assets/img/bg-design-51-1200.webp')">
-    <div class="container">
+    <div class="container reveal">
       <h2 class="band__title">Ship management and sea transport, managed from Dubai</h2>
       <p class="band__subtitle">Technical, crew, OPEX and fleet services for vessels in commodity trade</p>
       <div class="band__actions"><a class="btn btn--gold" href="ship-management-company.html">About Company</a></div>
@@ -151,13 +151,13 @@
   <!-- Industries -->
   <section class="section photo-section wash--fade" style="background-image:url('assets/img/bg-bg-worldmap-1-1200.webp')">
     <div class="container">
-      <div class="text-center measure">
+      <div class="text-center measure reveal">
         <h2 class="section-heading">Whatever your industry, we are your global freight forwarder</h2>
       </div>
 
       <div class="grid grid--3" style="margin-top:3em;row-gap:3em">
 
-        <article class="card card--accent">
+        <article class="card card--accent reveal">
           <div class="card__body">
             <picture><source type="image/webp" srcset="assets/img/1-1-optimized.webp"><img src="assets/img/1-1-optimized.png" alt="Line-art light bulb enclosing a seedling and a recycling arrow" width="90" height="90" loading="lazy" style="margin:0 auto 1em"></picture>
             <h3 class="card__title">Energy Sector</h3>
@@ -166,7 +166,7 @@
           </div>
         </article>
 
-        <article class="card">
+        <article class="card reveal">
           <div class="card__body">
             <picture><source type="image/webp" srcset="assets/img/2-1-optimized.webp"><img src="assets/img/2-1-optimized.png" alt="Line-art farm tractor beneath a pair of leaves" width="90" height="90" loading="lazy" style="margin:0 auto 1em"></picture>
             <h3 class="card__title">Agriculture and Food Industry</h3>
@@ -175,7 +175,7 @@
           </div>
         </article>
 
-        <article class="card card--accent">
+        <article class="card card--accent reveal">
           <div class="card__body">
             <picture><source type="image/webp" srcset="assets/img/3-1-optimized.webp"><img src="assets/img/3-1-optimized.png" alt="Line-art pickaxe striking ore above a half globe" width="90" height="90" loading="lazy" style="margin:0 auto 1em"></picture>
             <h3 class="card__title">Manufacturing and Mining</h3>
@@ -184,7 +184,7 @@
           </div>
         </article>
 
-        <article class="card">
+        <article class="card reveal">
           <div class="card__body">
             <picture><source type="image/webp" srcset="assets/img/4-1-optimized.webp"><img src="assets/img/4-1-optimized.png" alt="Line-art chemical plant with chimneys under a droplet" width="90" height="90" loading="lazy" style="margin:0 auto 1em"></picture>
             <h3 class="card__title">Chemical Industry</h3>
@@ -193,7 +193,7 @@
           </div>
         </article>
 
-        <article class="card card--accent">
+        <article class="card card--accent reveal">
           <div class="card__body">
             <picture><source type="image/webp" srcset="assets/img/5-1-optimized.webp"><img src="assets/img/5-1-optimized.png" alt="Line-art building under construction beside a tower crane" width="90" height="90" loading="lazy" style="margin:0 auto 1em"></picture>
             <h3 class="card__title">Construction and Infrastructure</h3>
@@ -202,7 +202,7 @@
           </div>
         </article>
 
-        <article class="card">
+        <article class="card reveal">
           <div class="card__body">
             <picture><source type="image/webp" srcset="assets/img/design-42-optimized.webp"><img src="assets/img/design-42-optimized.png" alt="Line-art car seen head on" width="90" height="90" loading="lazy" style="margin:0 auto 1em"></picture>
             <h3 class="card__title">Automotive Industry</h3>
@@ -223,7 +223,7 @@
           <h2 class="section-heading">Frequently Asked Questions</h2>
           <p>We have collected here answers to the most frequently asked questions from our many years of practice, as well as other useful information that will help you decide on ship management services or our other services for the transportation of liquid and bulk cargo</p>
 
-          <div class="sidebar-card" style="margin-top:2em">
+          <div class="sidebar-card reveal" style="margin-top:2em">
             <h3 class="sidebar-card__title">Have Any Questions?</h3>
             <p>Ask us your questions and we will answer them promptly</p>
             <a class="btn btn--gold" href="contact.html">Contact Us</a>
@@ -265,13 +265,13 @@
   <!-- Sea transport services -->
   <section class="section">
     <div class="container">
-      <div class="text-center measure">
+      <div class="text-center measure reveal">
         <h2 class="section-heading section-heading--upper">Sea transport for crude, petroleum products and bulk cargo</h2>
         <p class="lede">Ship technical management &mdash; from routine maintenance to sophisticated technical operations, our dedicated team ensures optimal performance through thorough inspections and advanced diagnostic tools. Emphasizing preventive maintenance and compliance with maritime regulations, our approach prioritizes reliability, efficiency, and the sustained success of your maritime fleet.</p>
       </div>
 
       <div class="grid grid--3" style="margin-top:3em">
-        <article class="chip-card">
+        <article class="chip-card reveal">
           <div class="chip-card__media">
             <picture><source type="image/webp" srcset="assets/img/9-optimized-480.webp 480w, assets/img/9-optimized-768.webp 768w, assets/img/9-optimized-1200.webp 1200w" sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 370px"><img src="assets/img/9-optimized.png" alt="Red and black tanker under way" width="400" height="266" loading="lazy"></picture>
             <span class="chip-card__label">International maritime logistics</span>
@@ -282,7 +282,7 @@
             <a class="link-gold" href="international-sea-transport.html">Read More</a>
           </div>
         </article>
-        <article class="chip-card">
+        <article class="chip-card reveal">
           <div class="chip-card__media">
             <picture><source type="image/webp" srcset="assets/img/8-optimized-480.webp 480w, assets/img/8-optimized-768.webp 768w, assets/img/8-optimized-1200.webp 1200w" sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 370px"><img src="assets/img/8-optimized.png" alt="Bulk carrier at sea seen from above" width="400" height="266" loading="lazy"></picture>
             <span class="chip-card__label">Liquid cargo</span>
@@ -293,7 +293,7 @@
             <a class="link-gold" href="sea-transportation-of-liquid-cargo.html">Read More</a>
           </div>
         </article>
-        <article class="chip-card">
+        <article class="chip-card reveal">
           <div class="chip-card__media">
             <picture><source type="image/webp" srcset="assets/img/1-optimized-480.webp 480w, assets/img/1-optimized-768.webp 768w, assets/img/1-optimized-1200.webp 1200w" sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 370px"><img src="assets/img/1-optimized.png" alt="Cargo vessel under a bright cloudy sky" width="400" height="266" loading="lazy"></picture>
             <span class="chip-card__label">Bulk cargo</span>
@@ -385,6 +385,6 @@
 </footer>
 
 <button class="to-top" type="button" aria-label="Scroll to top">&#9650;</button>
-<script src="assets/js/main.js?v=7496015f"></script>
+<script src="assets/js/main.js?v=66361dbd"></script>
 </body>
 </html>

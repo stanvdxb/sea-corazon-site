@@ -13,11 +13,11 @@
 <meta name="theme-color" content="#002050" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0B1A2E" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
-<script>(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
+<script>(function(){var h=document.documentElement;try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")h.setAttribute("data-theme",t)}catch(e){}if("IntersectionObserver" in window&&!matchMedia("(prefers-reduced-motion: reduce)").matches){h.classList.add("js-reveal");setTimeout(function(){if(!window.__revealReady)h.classList.remove("js-reveal")},2500)}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alumni+Sans:wght@400;600&family=Heebo:wght@300;400&family=Roboto+Condensed:wght@300;400;500;600;700&display=swap">
-<link rel="stylesheet" href="assets/css/style.css?v=86fc6d25">
+<link rel="stylesheet" href="assets/css/style.css?v=167b4cd3">
 </head>
 <body>
 <a class="skip-link" href="#content">Skip to content</a>
@@ -78,11 +78,11 @@
   <!-- Page banner -->
   <section class="page-banner photo-section wash--navy" style="background-image:url('assets/img/11-optimized-1200.webp')">
     <div class="container">
-      <ul class="breadcrumb">
+      <ul class="breadcrumb reveal reveal--down">
         <li><a href="index.html">Home</a></li>
         <li>FAQ</li>
       </ul>
-      <h1 class="page-banner__title">How can we help?</h1>
+      <h1 class="page-banner__title reveal">How can we help?</h1>
     </div>
   </section>
 
@@ -94,7 +94,7 @@
           <h2 class="section-heading">Frequently Asked Questions</h2>
           <p>Answers to the questions owners and charterers ask us most often about ship management and sea transport. If yours is not here, ask us directly.</p>
 
-          <div class="sidebar-card" style="margin-top:2em">
+          <div class="sidebar-card reveal" style="margin-top:2em">
             <h3 class="sidebar-card__title">Have Any Questions?</h3>
             <p>Ask us your questions and we will answer them promptly</p>
             <a class="btn btn--gold" href="contact.html">Contact Us</a>
@@ -214,6 +214,6 @@
 </footer>
 
 <button class="to-top" type="button" aria-label="Scroll to top">&#9650;</button>
-<script src="assets/js/main.js?v=7496015f"></script>
+<script src="assets/js/main.js?v=66361dbd"></script>
 </body>
 </html>

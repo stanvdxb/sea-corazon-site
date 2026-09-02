@@ -3,6 +3,28 @@
 (function () {
   'use strict';
 
+  /* ---- scroll reveal ----------------------------------------------------
+     The head script adds .js-reveal before first paint only when an observer
+     exists and the visitor has not asked for reduced motion; this is the
+     matching half. Elements never depend on it to be visible. */
+  window.__revealReady = true;
+  var revealEls = document.querySelectorAll('.reveal');
+  if (revealEls.length && document.documentElement.classList.contains('js-reveal')) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var el = entry.target, i = 0, sib = el;
+        while ((sib = sib.previousElementSibling) && i < 4) { if (sib.classList.contains('reveal')) i++; }
+        el.style.transitionDelay = (i * 70) + 'ms';   // small groups only: cards in a row
+        el.classList.add('is-in');
+        io.unobserve(el);
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+    revealEls.forEach(function (el) { io.observe(el); });
+  } else {
+    document.documentElement.classList.remove('js-reveal');
+  }
+
   /* ---- mobile navigation ------------------------------------------------ */
   var toggle = document.querySelector('.nav__toggle');
   var list = document.querySelector('.nav__list');

@@ -482,13 +482,17 @@ html { color-scheme: light; accent-color: var(--blue); caret-color: var(--blue);
 /* copy first on mobile only (source: elementor-reverse-mobile) */
 
 .split__stack { position: relative; padding-bottom: 4em; padding-right: 3em; }
-.split__stack img:first-child { width: 100%; }
-.split__stack img + img {
+.split__stack > picture:first-child { display: block; width: 100%; }
+.split__stack > picture + picture {
   position: absolute;
   right: 0; bottom: 0;
+  display: block;
   width: 55%;
   border: 8px solid var(--navy);
+  background: var(--navy);
+  box-shadow: var(--shadow-card);
 }
+.split__stack > picture img { display: block; width: 100%; }
 .split__body > :last-child { margin-bottom: 0; }
 
 .image-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
@@ -933,7 +937,7 @@ textarea.field { min-height: 46px; resize: vertical; }
   .split--reverse .split__media { order: 0; }
   .split--flip-mobile .split__media { order: 2; }
   .split__stack { padding-bottom: 0; padding-right: 0; }
-  .split__stack img + img { position: static; width: 100%; margin-top: 1em; border-width: 5px; }
+  .split__stack > picture + picture { position: static; width: 100%; margin-top: 1em; border-width: 5px; box-shadow: none; }
   .image-pair { grid-template-columns: 1fr; }
   .info-boxes { grid-template-columns: 1fr; }
   .checklist--two { columns: 1; }
@@ -955,6 +959,22 @@ textarea.field { min-height: 46px; resize: vertical; }
   .testimonial__title { font-size: 26px; }
 }
 
+/* --------------------------------------------------------------------------
+   23. Motion — one authored moment. Elements are visible by default; only when
+       the head script confirms JS + no reduced-motion does .js-reveal hide them,
+       and the observer in main.js brings them in on an exponential ease-out.
+   -------------------------------------------------------------------------- */
+.reveal { opacity: 1; transform: none; }
+.js-reveal .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity .7s cubic-bezier(.16, 1, .3, 1), transform .7s cubic-bezier(.16, 1, .3, 1);
+}
+.js-reveal .reveal--left  { transform: translateX(-28px); }
+.js-reveal .reveal--right { transform: translateX(28px); }
+.js-reveal .reveal--down  { transform: translateY(-14px); }
+.js-reveal .reveal.is-in  { opacity: 1; transform: none; }
+
 @media (prefers-reduced-motion: reduce) {
   /* Remove decorative motion; keep the state changes that carry meaning.
      Accordion, tabs and dot selection still switch state — they no longer animate doing it. */
@@ -966,4 +986,5 @@ textarea.field { min-height: 46px; resize: vertical; }
   .accordion__icon::after, .carousel__dot::before, .to-top,
   a, .btn, .link-gold, .link-crimson, .tabs__tab, .field { transition-duration: 0s; }
   .carousel__dot[aria-selected="true"]::before { transform: none; }
+  .js-reveal .reveal { opacity: 1; transform: none; transition: none; }
 }

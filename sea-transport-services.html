@@ -13,11 +13,11 @@
 <meta name="theme-color" content="#002050" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0B1A2E" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
-<script>(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
+<script>(function(){var h=document.documentElement;try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")h.setAttribute("data-theme",t)}catch(e){}if("IntersectionObserver" in window&&!matchMedia("(prefers-reduced-motion: reduce)").matches){h.classList.add("js-reveal");setTimeout(function(){if(!window.__revealReady)h.classList.remove("js-reveal")},2500)}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alumni+Sans:wght@400;600&family=Heebo:wght@300;400&family=Roboto+Condensed:wght@300;400;500;600;700&display=swap">
-<link rel="stylesheet" href="assets/css/style.css?v=86fc6d25">
+<link rel="stylesheet" href="assets/css/style.css?v=167b4cd3">
 </head>
 <body>
 <a class="skip-link" href="#content">Skip to content</a>
@@ -78,24 +78,24 @@
   <!-- Page banner -->
   <section class="page-banner photo-section wash--navy" style="background-image:url('assets/img/bg-container-ship-global-business-freight-import-export-logistic-transportation--1200.webp')">
     <div class="container">
-      <ul class="breadcrumb">
+      <ul class="breadcrumb reveal reveal--down">
         <li><a href="index.html">Home</a></li>
         <li>Services sea transport</li>
       </ul>
-      <h1 class="page-banner__title">Sea transport services</h1>
+      <h1 class="page-banner__title reveal">Sea transport services</h1>
     </div>
   </section>
 
   <!-- What We Offer -->
   <section class="section photo-section wash--fade" style="background-image:url('assets/img/14-optimized-1200.webp')">
     <div class="container">
-      <div class="text-center measure">
+      <div class="text-center measure reveal">
         <h2 class="section-heading">What We Offer In Sea Freight Transportation</h2>
         <p class="lede">Services for maritime logistics of liquid and bulk cargo</p>
       </div>
 
       <div class="grid grid--3" style="margin-top:3em">
-        <article class="card">
+        <article class="card reveal">
           <div class="card__media"><picture><source type="image/webp" srcset="assets/img/9-optimized-480.webp 480w, assets/img/9-optimized-768.webp 768w, assets/img/9-optimized-1200.webp 1200w" sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 370px"><img src="assets/img/9-optimized.png" alt="Red and white LPG tanker under way at sea" width="400" height="266" loading="lazy"></picture></div>
           <div class="card__body">
             <h3 class="card__title">International sea transport</h3>
@@ -103,7 +103,7 @@
             <div class="card__actions"><a class="btn btn--card" href="international-sea-transport.html">Learn more</a></div>
           </div>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="card__media"><picture><source type="image/webp" srcset="assets/img/3-optimized-480.webp 480w, assets/img/3-optimized-768.webp 768w, assets/img/3-optimized-1200.webp 1200w" sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 370px"><img src="assets/img/3-optimized.png" alt="Stern of a loaded black and orange tanker at sea" width="400" height="266" loading="lazy"></picture></div>
           <div class="card__body">
             <h3 class="card__title">Sea transportation of liquid cargo</h3>
@@ -111,7 +111,7 @@
             <div class="card__actions"><a class="btn btn--card" href="sea-transportation-of-liquid-cargo.html">Learn more</a></div>
           </div>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="card__media"><picture><source type="image/webp" srcset="assets/img/1-optimized-480.webp 480w, assets/img/1-optimized-768.webp 768w, assets/img/1-optimized-1200.webp 1200w" sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 370px"><img src="assets/img/1-optimized.png" alt="Red-hulled product tanker under a bright cloudy sky" width="400" height="266" loading="lazy"></picture></div>
           <div class="card__body">
             <h3 class="card__title">Transportation of bulk cargo</h3>
@@ -126,7 +126,7 @@
   <!-- Reliable sea transportation -->
   <section class="cta-band photo-section wash--sea" style="background-image:url('assets/img/bg-design-41-1200.webp')">
     <div class="container">
-      <div class="cta-band__inner">
+      <div class="cta-band__inner reveal reveal--left">
         <h2 class="cta-band__title">Reliable sea transportation</h2>
         <p class="cta-band__body">Sea transportation of liquid and bulk cargo by Sea Corazon Ship Management FZCO&nbsp; is highly reliable, with a proven track record of efficient deliveries, meticulous handling, and adherence to stringent safety protocols, ensuring the secure and dependable transport of diverse cargoes across international waters.</p>
         <a class="btn btn--gold" href="ship-management-company.html">Discover More</a>
@@ -137,12 +137,12 @@
   <!-- Whatever your industry -->
   <section class="section photo-section wash--fade" style="background-image:url('assets/img/bg-bg-worldmap-1-1200.webp')">
     <div class="container">
-      <div class="text-center measure">
+      <div class="text-center measure reveal">
         <h2 class="section-heading">Whatever your industry, we are your global freight forwarder</h2>
       </div>
 
       <div class="grid grid--3" style="margin-top:3em;row-gap:3em">
-        <article class="card">
+        <article class="card reveal">
           <div class="card__body">
             <span class="feature__icon" style="margin-inline:auto"><picture><source type="image/webp" srcset="assets/img/1-1-optimized.webp"><img src="assets/img/1-1-optimized.png" alt="Line icon of a lightbulb with an oil derrick inside" width="500" height="500" loading="lazy"></picture></span>
             <h3 class="card__title">Energy Sector</h3>
@@ -150,7 +150,7 @@
             <div class="card__actions"><a class="btn btn--card" href="#">Learn more</a> <a class="btn btn--card" href="contact.html">Order</a></div>
           </div>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="card__body">
             <span class="feature__icon" style="margin-inline:auto"><picture><source type="image/webp" srcset="assets/img/2-1-optimized.webp"><img src="assets/img/2-1-optimized.png" alt="Line icon of a farm tractor with a sprouting plant above it" width="500" height="500" loading="lazy"></picture></span>
             <h3 class="card__title">Agriculture and Food Industry</h3>
@@ -158,7 +158,7 @@
             <div class="card__actions"><a class="btn btn--card" href="#">Learn more</a> <a class="btn btn--card" href="contact.html">Order</a></div>
           </div>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="card__body">
             <span class="feature__icon" style="margin-inline:auto"><picture><source type="image/webp" srcset="assets/img/3-1-optimized.webp"><img src="assets/img/3-1-optimized.png" alt="Line icon of a pickaxe striking ore above a half globe" width="500" height="500" loading="lazy"></picture></span>
             <h3 class="card__title">Manufacturing and Mining</h3>
@@ -166,7 +166,7 @@
             <div class="card__actions"><a class="btn btn--card" href="#">Learn more</a> <a class="btn btn--card" href="contact.html">Order</a></div>
           </div>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="card__body">
             <span class="feature__icon" style="margin-inline:auto"><picture><source type="image/webp" srcset="assets/img/4-1-optimized.webp"><img src="assets/img/4-1-optimized.png" alt="Line icon of a chemical plant beneath a droplet" width="500" height="500" loading="lazy"></picture></span>
             <h3 class="card__title">Chemical Industry</h3>
@@ -174,7 +174,7 @@
             <div class="card__actions"><a class="btn btn--card" href="#">Learn more</a> <a class="btn btn--card" href="contact.html">Order</a></div>
           </div>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="card__body">
             <span class="feature__icon" style="margin-inline:auto"><picture><source type="image/webp" srcset="assets/img/5-1-optimized.webp"><img src="assets/img/5-1-optimized.png" alt="Line icon of a tower crane beside a building under construction" width="500" height="500" loading="lazy"></picture></span>
             <h3 class="card__title">Construction and Infrastructure</h3>
@@ -182,7 +182,7 @@
             <div class="card__actions"><a class="btn btn--card" href="#">Learn more</a> <a class="btn btn--card" href="contact.html">Order</a></div>
           </div>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="card__body">
             <span class="feature__icon" style="margin-inline:auto"><picture><source type="image/webp" srcset="assets/img/design-42-optimized.webp"><img src="assets/img/design-42-optimized.png" alt="Line icon of a car seen head on" width="500" height="500" loading="lazy"></picture></span>
             <h3 class="card__title">Automotive Industry</h3>
@@ -207,28 +207,28 @@
       </div>
 
       <div class="grid grid--2" style="margin-top:3em;row-gap:3em">
-        <div class="feature">
+        <div class="feature reveal">
           <span class="feature__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.8 7.8 0 0 0 0-2l2.1-1.6a.5.5 0 0 0 .1-.6l-2-3.5a.5.5 0 0 0-.6-.2l-2.5 1a7.6 7.6 0 0 0-1.7-1l-.4-2.6a.5.5 0 0 0-.5-.4h-4a.5.5 0 0 0-.5.4l-.4 2.6a7.6 7.6 0 0 0-1.7 1l-2.5-1a.5.5 0 0 0-.6.2l-2 3.5a.5.5 0 0 0 .1.6L4.6 11a7.8 7.8 0 0 0 0 2l-2.1 1.6a.5.5 0 0 0-.1.6l2 3.5a.5.5 0 0 0 .6.2l2.5-1a7.6 7.6 0 0 0 1.7 1l.4 2.6a.5.5 0 0 0 .5.4h4a.5.5 0 0 0 .5-.4l.4-2.6a7.6 7.6 0 0 0 1.7-1l2.5 1a.5.5 0 0 0 .6-.2l2-3.5a.5.5 0 0 0-.1-.6zM12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5z"/></svg></span>
           <div>
             <h3 class="feature__title">Operational Excellence</h3>
             <p class="feature__text">Sea Corazon Ship Management FZCO brings a track record of operational excellence, ensuring that the transferred ship operates efficiently, adheres to industry best practices, and meets high-performance standards.</p>
           </div>
         </div>
-        <div class="feature">
+        <div class="feature reveal">
           <span class="feature__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2h8l6 6v14H6zm7 1.5V9h5.5zM8 12h8v1.5H8zm0 3.5h8V17H8zm0 3.5h5v1.5H8z"/></svg></span>
           <div>
             <h3 class="feature__title">Regulatory Compliance</h3>
             <p class="feature__text">With extensive expertise in maritime regulations, Sea Corazon Ship Management FZCO  can ensure that the transferred ship complies with all relevant rules and standards, minimizing the risk of regulatory issues and enhancing overall operational compliance.</p>
           </div>
         </div>
-        <div class="feature">
+        <div class="feature reveal">
           <span class="feature__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 21c0-8 5-13 14-14 0 7-3 12-9 13-1 .2-2 .4-3 1H6zm2.5-2.4C10 15 13 12.4 17 11c-4.6.8-7.7 3.7-8.5 7.6z"/><path d="M3 21c0-3 1-5.5 3-7.5"/></svg></span>
           <div>
             <h3 class="feature__title">Safety and Environmental Focus</h3>
             <p class="feature__text">The management by Sea Corazon Ship Management FZCO prioritizes safety protocols and environmental sustainability. The ship benefits from a commitment to maintaining the highest health and safety standards, reducing risks and promoting environmental responsibility.</p>
           </div>
         </div>
-        <div class="feature">
+        <div class="feature reveal">
           <span class="feature__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm-8 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm0 2c-2.3 0-7 1.2-7 3.5V19h9v-2.5A3.4 3.4 0 0 1 11.3 14 12.6 12.6 0 0 0 8 13zm8 0a10 10 0 0 0-2.2.3A4 4 0 0 1 15 16.5V19h8v-2.5c0-2.3-4.7-3.5-7-3.5z"/></svg></span>
           <div>
             <h3 class="feature__title">Global Network and Expertise</h3>
@@ -242,7 +242,7 @@
   <!-- Testimonials -->
   <section class="testimonial">
     <div class="container">
-      <div class="testimonial__panel" style="background-image:url('assets/img/bg-container-ship-global-business-freight-import-export-logistic-transportation--1200.webp')">
+      <div class="testimonial__panel reveal" style="background-image:url('assets/img/bg-container-ship-global-business-freight-import-export-logistic-transportation--1200.webp')">
         <h2 class="testimonial__title">What clients say</h2>
         <hr class="testimonial__rule">
 
@@ -358,6 +358,6 @@
 </footer>
 
 <button class="to-top" type="button" aria-label="Scroll to top">&#9650;</button>
-<script src="assets/js/main.js?v=7496015f"></script>
+<script src="assets/js/main.js?v=66361dbd"></script>
 </body>
 </html>

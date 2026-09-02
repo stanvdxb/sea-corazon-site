@@ -13,11 +13,11 @@
 <meta name="theme-color" content="#002050" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0B1A2E" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
-<script>(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();</script>
+<script>(function(){var h=document.documentElement;try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")h.setAttribute("data-theme",t)}catch(e){}if("IntersectionObserver" in window&&!matchMedia("(prefers-reduced-motion: reduce)").matches){h.classList.add("js-reveal");setTimeout(function(){if(!window.__revealReady)h.classList.remove("js-reveal")},2500)}})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alumni+Sans:wght@400;600&family=Heebo:wght@300;400&family=Roboto+Condensed:wght@300;400;500;600;700&display=swap">
-<link rel="stylesheet" href="assets/css/style.css?v=86fc6d25">
+<link rel="stylesheet" href="assets/css/style.css?v=167b4cd3">
 </head>
 <body>
 <a class="skip-link" href="#content">Skip to content</a>
@@ -78,24 +78,24 @@
   <!-- Page banner -->
   <section class="page-banner photo-section wash--navy" style="background-image:url('assets/img/8-optimized-1200.webp')">
     <div class="container">
-      <ul class="breadcrumb">
+      <ul class="breadcrumb reveal reveal--down">
         <li><a href="index.html">Home</a></li>
         <li>Services</li>
       </ul>
-      <h1 class="page-banner__title">Ship Management</h1>
+      <h1 class="page-banner__title reveal">Ship Management</h1>
     </div>
   </section>
 
   <!-- What We Offer -->
   <section class="section photo-section wash--fade" style="background-image:url('assets/img/14-optimized-1200.webp')">
     <div class="container">
-      <div class="text-center measure">
+      <div class="text-center measure reveal">
         <h2 class="section-heading">Technical, crew, OPEX and fleet management</h2>
         <p class="lede">We provide a full range of ship management services for our clients.</p>
       </div>
 
       <div class="grid grid--4" style="margin-top:3em">
-        <article class="card">
+        <article class="card reveal">
           <div class="card__media"><picture><source type="image/webp" srcset="assets/img/businessman-engineer-using-software-virtual-reality-in-laptop-to-monitoring-machine-in-real-time-optimized-480.webp 480w, assets/img/businessman-engineer-using-software-virtual-reality-in-laptop-to-monitoring-machine-in-real-time-optimized-768.webp 768w, assets/img/businessman-engineer-using-software-virtual-reality-in-laptop-to-monitoring-machine-in-real-time-optimized-1200.webp 1200w" sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 370px"><img src="assets/img/businessman-engineer-using-software-virtual-reality-in-laptop-to-monitoring-machine-in-real-time-optimized.jpg" alt="Engineer monitoring machinery through software on a laptop" width="400" height="266" loading="lazy"></picture></div>
           <div class="card__body">
             <h3 class="card__title">Technical Management</h3>
@@ -103,7 +103,7 @@
             <div class="card__actions"><a class="btn btn--card" href="technical-ship-management.html">Learn more</a></div>
           </div>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="card__media"><picture><source type="image/webp" srcset="assets/img/design-55-optimized-480.webp 480w, assets/img/design-55-optimized-768.webp 768w, assets/img/design-55-optimized-1200.webp 1200w" sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 370px"><img src="assets/img/design-55-optimized.png" alt="Two officers on a vessel bridge" width="400" height="266" loading="lazy"></picture></div>
           <div class="card__body">
             <h3 class="card__title">Crew Management</h3>
@@ -111,7 +111,7 @@
             <div class="card__actions"><a class="btn btn--card" href="crew-management.html">Learn more</a></div>
           </div>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="card__media"><picture><source type="image/webp" srcset="assets/img/design-54-optimized-480.webp 480w, assets/img/design-54-optimized-768.webp 768w, assets/img/design-54-optimized-1200.webp 1200w" sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 370px"><img src="assets/img/design-54-optimized.png" alt="Team in high-visibility vests conferring at a port" width="400" height="266" loading="lazy"></picture></div>
           <div class="card__body">
             <h3 class="card__title">OPEX Management</h3>
@@ -119,7 +119,7 @@
             <div class="card__actions"><a class="btn btn--card" href="opex-management.html">Learn more</a></div>
           </div>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="card__media"><picture><source type="image/webp" srcset="assets/img/10-optimized-480.webp 480w, assets/img/10-optimized-768.webp 768w, assets/img/10-optimized-1200.webp 1200w" sizes="(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 370px"><img src="assets/img/10-optimized.png" alt="Aerial view of a vessel alongside a terminal" width="400" height="266" loading="lazy"></picture></div>
           <div class="card__body">
             <h3 class="card__title">Fleet Management</h3>
@@ -134,7 +134,7 @@
   <!-- Efficient ship management band -->
   <section class="cta-band photo-section wash--sea" style="background-image:url('assets/img/9-optimized-1200.webp')">
     <div class="container">
-      <div class="cta-band__inner">
+      <div class="cta-band__inner reveal reveal--left">
         <h2 class="cta-band__title">Efficient ship management</h2>
         <p class="cta-band__body">Sea Corazon Ship Management offers a complete range of ship management services for vessels in commodity transport. We prioritize safety, efficiency, and regulatory compliance, with the aim of improving vessel performance and simplifying our clients&rsquo; supply chain operations.</p>
         <a class="btn btn--gold" href="ship-management-company.html">Discover More</a>
@@ -156,7 +156,7 @@
 
       <div class="grid grid--2" style="margin-top:3em">
         <div>
-          <div class="feature">
+          <div class="feature reveal">
             <span class="feature__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M19.4 13a7.8 7.8 0 0 0 0-2l2.1-1.6a.5.5 0 0 0 .1-.6l-2-3.5a.5.5 0 0 0-.6-.2l-2.5 1a7.6 7.6 0 0 0-1.7-1l-.4-2.6a.5.5 0 0 0-.5-.4h-4a.5.5 0 0 0-.5.4l-.4 2.6a7.6 7.6 0 0 0-1.7 1l-2.5-1a.5.5 0 0 0-.6.2l-2 3.5a.5.5 0 0 0 .1.6L4.6 11a7.8 7.8 0 0 0 0 2l-2.1 1.6a.5.5 0 0 0-.1.6l2 3.5a.5.5 0 0 0 .6.2l2.5-1a7.6 7.6 0 0 0 1.7 1l.4 2.6a.5.5 0 0 0 .5.4h4a.5.5 0 0 0 .5-.4l.4-2.6a7.6 7.6 0 0 0 1.7-1l2.5 1a.5.5 0 0 0 .6-.2l2-3.5a.5.5 0 0 0-.1-.6zM12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5z"/></svg></span>
             <div>
               <h3 class="feature__title">Operational Excellence</h3>
@@ -172,7 +172,7 @@
           </div>
         </div>
         <div>
-          <div class="feature">
+          <div class="feature reveal">
             <span class="feature__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2h8l6 6v14H6zm7 1.5V9h5.5zM8 12h8v1.5H8zm0 3.5h8V17H8zm0 3.5h5v1.5H8z"/></svg></span>
             <div>
               <h3 class="feature__title">Regulatory Compliance</h3>
@@ -194,7 +194,7 @@
   <!-- Testimonials -->
   <section class="testimonial">
     <div class="container">
-      <div class="testimonial__panel" style="background-image:url('assets/img/bg-container-ship-global-business-freight-import-export-logistic-transportation--1200.webp')">
+      <div class="testimonial__panel reveal" style="background-image:url('assets/img/bg-container-ship-global-business-freight-import-export-logistic-transportation--1200.webp')">
         <h2 class="testimonial__title">What clients say</h2>
         <hr class="testimonial__rule">
         <div class="carousel" aria-roledescription="carousel" aria-label="Client testimonials">
@@ -299,6 +299,6 @@
 </footer>
 
 <button class="to-top" type="button" aria-label="Scroll to top">&#9650;</button>
-<script src="assets/js/main.js?v=7496015f"></script>
+<script src="assets/js/main.js?v=66361dbd"></script>
 </body>
 </html>
