@@ -10,7 +10,10 @@ python3 -m http.server 8765
 # open http://127.0.0.1:8765/
 ```
 
-Any static host serves it as-is. `sitemap.xml` and `robots.txt` assume the site lives at `https://manageships.com/`; change the host in both if it moves.
+Any static host serves it as-is. It is currently published from this repository by GitHub Pages at
+<https://stanvdxb.github.io/sea-corazon-site/> — every push to `main` redeploys within a minute or two.
+`sitemap.xml` and `robots.txt` assume the final home is `https://manageships.com/`; point that domain at Pages
+(a `CNAME` file plus DNS) when ready, or change the host in both files if it moves elsewhere.
 
 ## What's here
 
