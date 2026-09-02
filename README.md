@@ -1,104 +1,79 @@
-# manageships-clone
+# Sea Corazon Ship Management — website
 
-A dependency-free static clone of [manageships.com](https://manageships.com) — the site of
-**Sea Corazon Ship Management FZCO**, a Dubai-based ship management company.
-
-Captured with the Firecrawl CLI and rebuilt by hand as plain HTML, one stylesheet and one small
-JavaScript file. No WordPress, no build step, no framework, no npm install.
+The website of **Sea Corazon Ship Management FZCO**, a Dubai ship management company.
+Plain HTML, one stylesheet, one small script. No framework, no build step, nothing to install.
 
 ## Running it
 
-Any static server will do:
-
 ```bash
 python3 -m http.server 8765
-# then open http://127.0.0.1:8765/index.html
+# open http://127.0.0.1:8765/
 ```
 
-Opening `index.html` straight off the filesystem also works.
+Any static host serves it as-is. `sitemap.xml` and `robots.txt` assume the site lives at `https://manageships.com/`; change the host in both if it moves.
 
-## What the original is
-
-The source site is **WordPress + Astra + Elementor**, with ElementsKit, Metform, Popup Maker and
-Header-Footer-Elementor on top. A live page pulls in 50+ stylesheets plus jQuery, React,
-Google reCAPTCHA and a Cloudflare beacon.
-
-None of that is reproduced. A byte-faithful mirror of that stack would be almost impossible to work
-on, so the clone keeps the **content and the design** and throws away the delivery mechanism.
-
-## Layout
+## What's here
 
 ```
-index.html                              home
-ship-management-company.html            About Us
-services-ship-management.html           Ship management services (hub)
+index.html                                home
+ship-management-company.html              About Us
+services-ship-management.html             Ship management services
   technical-ship-management.html
   crew-management.html
   opex-management.html
   fleet-management-services.html
-  auxiliary-ship-services.html          stub — see "Source defects" below
-sea-transport-services.html             Sea transport services (hub)
+sea-transport-services.html               Sea transport services
   international-sea-transport.html
   sea-transportation-of-liquid-cargo.html
   transportation-of-bulk-cargo.html
-faq.html
-contact.html
-privacy-policy.html
-info.html / careers.html / sitemap.html stubs for links the source leaves dangling
+faq.html · contact.html · privacy-policy.html · sitemap.html
 
-assets/css/style.css                    the entire design system, ~780 lines
-assets/js/main.js                       nav, accordions, scroll-to-top, form interception
-assets/img/                             50 mirrored images
-.firecrawl/                             scraped source material (git-ignored, not part of the site)
+assets/css/style.css        the whole design system (~880 lines)
+assets/js/main.js           nav, accordion, tabs, carousel, scroll-to-top, form interception
+assets/img/                 photography: WebP at 480/768/1200 px, PNG/JPEG fallback
+assets/icons/               favicon set generated from the logo's heart mark
+site.webmanifest · favicon.ico · sitemap.xml · robots.txt
 ```
 
-`.firecrawl/` holds the raw capture — original HTML, markdown, full-page screenshots, the Elementor
-per-post stylesheets and the extracted content models. It is the evidence the clone was built from,
-not part of the deliverable.
+`.firecrawl/` is git-ignored working material — the original site capture this was rebuilt from, extraction notes, verification screenshots, and `check-site.py`.
 
-## Design tokens
+## Design
 
-Extracted from the live Elementor kit (`post-1222`) and the per-post stylesheets, not eyeballed.
+**Palette from the logo, nothing else.** Every colour is sampled from `assets/img/design-1-optimized.png`:
 
-| Token | Value | Used for |
+| token | value | role |
 |---|---|---|
-| `--navy` | `#164E72` | brand, headings, links, top bar |
-| `--navy-deep` | `#0A1D29` | footer |
-| `--gold` | `#E1963A` | every call to action |
-| `--blue-mid` | `#477DA4` | hover state |
-| `--blue-light` | `#779CBB` | section eyebrows |
-| `--ink` | `#334155` | body copy |
-| `--surface-soft` | `#F0F5FA` | tinted sections |
+| `--navy` | `#002050` | headings, wordmark, top bar |
+| `--navy-deep` | `#001438` | footer |
+| `--blue` | `#1058A0` | the one action colour: every button, every link |
+| `--blue-deep` | `#0B4680` | hover |
+| `--blue-soft` | `#2A66AE` | gradients and tints only, never a text ground |
 
-Type is **Roboto Condensed** throughout (300/400/500/600/700), with **Alumni Sans** on the one
-"Supply Chain Technology" band and **Heebo** on the footer's bottom-bar links — matching the source,
-which loads Roboto, Roboto Slab and IBM Plex Sans but never applies them to anything visible.
+Every foreground/background pair used for text is ≥ 4.5 : 1 (white on `--blue` is 7.2 : 1, on `--navy` 15.9 : 1). The palette script that generated `:root` refuses to write if any pair fails.
 
-Breakpoints are the source's own: **1024px** (tablet, nav collapses to a hamburger) and **767px** (mobile).
+**Type:** Roboto Condensed (300–700) throughout; Alumni Sans on one display band; Heebo on the footer's small links. Body 16 px, nothing in `<main>` below 15 px.
 
-## Components
+**Breakpoints:** 1024 px (nav collapses) and 767 px (single column). Every interactive element is at least 44 × 44 px at every width. On narrow screens the service-page sidebar follows the article instead of preceding it.
 
-`assets/css/style.css` is the whole design system. Everything on the site is composed from these:
+**Motion:** `prefers-reduced-motion` removes decorative transitions (image zoom, fades) but keeps state changes — accordion, tabs and carousel still switch, they just don't animate.
 
-| Component | Class | Notes |
-|---|---|---|
-| Header | `.topbar` + `.masthead` + `.nav` | not sticky (the source isn't either); hamburger below 1024px |
-| Home hero | `.hero` + `.photo-section` | copy in the left half over a full-bleed photo |
-| Inner banner | `.page-banner` + `.breadcrumb` | **only** on About, Services, Sea transport, FAQ and Contact |
-| Service-page hero | `.cta-band` | the 7 detail pages open with this, not a banner |
-| Statement band | `.band`, `.band--display` | `--display` is the one Alumni Sans band |
-| Split | `.split`, `.split--flip-mobile` | image collage + copy; flips to copy-first on mobile |
-| Cards | `.card`, `.card--accent` | industry grids alternate blue/white 1-3-5 / 2-4-6 |
-| Chip cards | `.chip-card` | gold badge over the image |
-| Feature grid | `.feature` | inline SVG icons, never emoji |
-| Accordion | `.accordion` | single-open, first item expanded |
-| Tabs | `.tabs` | About page's "Vision & Strategy"; arrow-key navigable |
-| Carousel | `.carousel` | testimonials; scroll-snap + dots, replaces Swiper |
-| Forms | `.field`, `.form-row` | intercepted, no backend |
-| Footer | `.footer-cta` + `.site-footer` | 4-column grid + bottom bar |
+**Components** (`style.css` sections 6–21): header, home hero, inner-page banner, statement/display/CTA bands, split image+copy, cards (`.card--accent` for the alternating blue variant), chip cards, feature grid with inline SVG icons, checklist, accordion, tabs, carousel (scroll-snap + dots; replaces Swiper), sidebar layout, forms, footer. Photographic sections take a colour wash modifier (`.wash--navy`, `.wash--radial`, `.wash--sea`, `.wash--fade`).
 
-The colour washes over photographic sections are separate modifiers — `.wash--navy`, `.wash--grey`,
-`.wash--radial`, `.wash--sea`, `.wash--fade` — matching the overlays the source's Elementor CSS applies.
+## Copy
+
+Headings carry their own weight; there are no kicker/eyebrow labels above them. Marketing filler ("cutting-edge", "world of possibilities", "streamlined") was rewritten into plain statements of what the company does, **using only facts already stated on the site** — no fleet sizes, countries, certifications or clients were added. Testimonials are reproduced verbatim as quoted third parties.
+
+The FAQ has seven questions answered from the site's own service descriptions. **They should be read and confirmed by Sea Corazon before launch** — they are accurate to the site's copy, not verified with the company.
+
+## Forms
+
+The three forms (callback card, footer enquiry, contact page) are intercepted by `main.js` and acknowledge in place. They post nowhere. Wire `data-clone-form` forms to a real endpoint before launch.
+
+## Known and deliberate
+
+- **No postal address is shown.** The previous "Office 1401, Prism Tower" address was retired at the client's request and no replacement was supplied. The footer and contact page show phone and email only; the contact-page map is centred on Business Bay, Dubai. Add the new address to `contact.html` and the footer of every page (one `<li>` in `.footer__contact`).
+- PNG/JPEG fallbacks under `assets/img/` are the original 48 MB; browsers that understand WebP (≈97 %) never request them. Delete the fallbacks to shrink the deploy if legacy support isn't needed.
+- No dark theme. The token system makes one cheap to add.
 
 ## Checking it
 
@@ -106,49 +81,4 @@ The colour washes over photographic sections are separate modifiers — `.wash--
 python3 .firecrawl/check-site.py
 ```
 
-Walks every page and reports dead local links, missing assets, pages without exactly one `<h1>`,
-stray `<style>` blocks, images without `alt`, and any class used in markup that the stylesheet
-never defines. It currently reports no problems across all 18 pages.
-
-## Source defects reproduced or worked around
-
-These are faults in the live site, recorded rather than silently fixed — the clone's job is fidelity.
-
-- **`auxiliary-ship-services` returns HTTP 502.** It is linked from the footer of all 14 pages.
-  The clone keeps the link and ships a stub page that says the page is unavailable.
-- **The FAQ answers are Lorem ipsum.** So is the "Help Center" copy. Reproduced verbatim.
-- **The "Info" nav item** points at `/category/uncategorized/`, an empty WordPress category archive.
-  Cloned as `info.html` with the same empty state.
-- **"Careers"** links to `#` in the source. Cloned as a stub.
-- **Two phone numbers exist.** A hidden mobile-only footer variant uses `+97145727910`;
-  everywhere else uses `+97145723303`. The clone standardises on the latter.
-- **The top-bar email** is linked to the homepage rather than a `mailto:` in the source.
-  The clone uses `mailto:` in both places.
-- **The copyright still reads "© 2022"** although the site was last modified in 2026. Left as-is.
-- **The install is Russian-locale** (`lang="ru-RU"`, Russian skip-link and menu labels) with English
-  body copy. The clone is `lang="en"` with English chrome.
-- **Casing is done in CSS, not in the text.** e.g. the hero source text is
-  "Connect Your Business To A World Of Possibilities", uppercased by `text-transform`. Preserved.
-
-## Deliberately not done
-
-This is a clone, so it stops at fidelity. The following are known and deferred:
-
-- **Images are unoptimised.** 50 MB of PNGs, several 1–2 MB each, for photographs that should be
-  WebP or AVIF. This is inherited from the source and is the single biggest performance problem.
-- No `srcset`/`sizes`, so every viewport downloads the desktop asset.
-- Accessibility is at source parity, not at AA. Focus rings and skip links are kept and labels are
-  present, but contrast, heading order and touch targets have not been audited.
-- The source's form placeholders carry trailing spaces (`"Name "`, `"Message "`); the clone trims them.
-- The source's "Message" field is a single-line `<input type="text">`; the clone uses a one-row
-  `<textarea>`, which renders identically but grows when typed into.
-- Popup Maker modals (the header "Contact Us" popup, the footer map popup) are not reproduced —
-  those links go to `contact.html` instead.
-- Forms are inert. The originals post to WordPress via Metform + reCAPTCHA; here submissions are
-  intercepted and acknowledged in place rather than failing against a dead endpoint.
-
-## Provenance
-
-Captured 2026-09-02 with `firecrawl-cli` 1.23.3. Three pages (`faq`, `contact`, `privacy-policy`)
-tripped the origin's shared-hosting resource limit (HTTP 508) under Firecrawl's renderer and were
-fetched over plain HTTP instead; their screenshots came from Playwright.
+Walks every page for dead links, missing assets, images not served as WebP, pages without exactly one `<h1>`, stray `<style>` blocks, images without `alt`, undefined classes, leftover placeholder or obsolete text, eyebrow elements, and marketing buzzwords in the site's own copy.
