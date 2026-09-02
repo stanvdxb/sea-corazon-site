@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Editor / tooling
+.vscode/
+.idea/
+*.swp
+
+# Impeccable working files
+.impeccable/sketches/
+
+# Browser-automation scratch output
+.playwright-mcp/
+
+# Firecrawl scrape cache
+.firecrawl/

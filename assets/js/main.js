@@ -1,85 +1,147 @@
-/* SHIP MANAGEMENT clone — interactions */
+/* Sea Corazon Ship Management — clone behaviour.
+   No dependencies. The original ran jQuery + Elementor + ElementsKit for this. */
 (function () {
   'use strict';
 
-  /* mobile nav */
-  var toggle = document.getElementById('nav-toggle');
-  var nav = document.getElementById('main-nav');
-  if (toggle && nav) {
+  /* ---- mobile navigation ------------------------------------------------ */
+  var toggle = document.querySelector('.nav__toggle');
+  var list = document.querySelector('.nav__list');
+
+  if (toggle && list) {
     toggle.addEventListener('click', function () {
-      var open = nav.classList.toggle('open');
-      toggle.setAttribute('aria-expanded', String(open));
-      toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      var open = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!open));
+      list.classList.toggle('is-open', !open);
     });
-    nav.addEventListener('click', function (e) {
-      if (e.target.tagName === 'A') {
-        nav.classList.remove('open');
-        toggle.setAttribute('aria-expanded', 'false');
+  }
+
+  /* Submenus open on hover at desktop widths; on touch/narrow widths the
+     parent link toggles instead of navigating. */
+  document.querySelectorAll('.nav__item--has-children > .nav__link').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      if (window.matchMedia('(max-width: 1024px)').matches) {
+        e.preventDefault();
+        link.parentNode.classList.toggle('is-open');
       }
     });
-  }
-
-  /* testimonial slider */
-  var quotes = Array.prototype.slice.call(document.querySelectorAll('.quote'));
-  var dots = Array.prototype.slice.call(document.querySelectorAll('.quote-dots button'));
-  var slide = 0, timer = null;
-  function show(i) {
-    slide = (i + quotes.length) % quotes.length;
-    quotes.forEach(function (q, k) { q.classList.toggle('is-active', k === slide); });
-    dots.forEach(function (d, k) { d.setAttribute('aria-selected', String(k === slide)); });
-  }
-  function autoplay() {
-    if (timer) clearInterval(timer);
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      timer = setInterval(function () { show(slide + 1); }, 6000);
-    }
-  }
-  dots.forEach(function (d) {
-    d.addEventListener('click', function () { show(parseInt(d.dataset.slide, 10)); autoplay(); });
   });
-  autoplay();
 
-  /* scroll-to-top */
-  var top = document.getElementById('to-top');
-  if (top) {
-    window.addEventListener('scroll', function () {
-      top.classList.toggle('show', window.scrollY > 500);
+  document.addEventListener('click', function (e) {
+    if (!list || !list.classList.contains('is-open')) return;
+    if (e.target.closest('.masthead__inner')) return;
+    list.classList.remove('is-open');
+    if (toggle) toggle.setAttribute('aria-expanded', 'false');
+  });
+
+  /* ---- accordions ------------------------------------------------------- */
+  document.querySelectorAll('.accordion').forEach(function (accordion) {
+    var single = accordion.dataset.single !== 'false';
+    accordion.querySelectorAll('.accordion__trigger').forEach(function (trigger) {
+      trigger.addEventListener('click', function () {
+        var item = trigger.closest('.accordion__item');
+        var open = item.getAttribute('data-open') === 'true';
+        if (single) {
+          accordion.querySelectorAll('.accordion__item').forEach(function (other) {
+            other.setAttribute('data-open', 'false');
+            other.querySelector('.accordion__trigger').setAttribute('aria-expanded', 'false');
+          });
+        }
+        item.setAttribute('data-open', String(!open));
+        trigger.setAttribute('aria-expanded', String(!open));
+      });
+    });
+  });
+
+  /* ---- carousels --------------------------------------------------------
+     The source runs Swiper. This gives the same result with scroll-snap:
+     the track is scrollable and keyboard-reachable on its own, and the dots
+     drive it. With JS off you still get a horizontally scrollable strip. */
+  document.querySelectorAll('.carousel').forEach(function (carousel) {
+    var track = carousel.querySelector('.carousel__track');
+    var slides = [].slice.call(carousel.querySelectorAll('.carousel__slide'));
+    var dots = [].slice.call(carousel.querySelectorAll('.carousel__dot'));
+    if (!track || slides.length < 2) return;
+
+    var goTo = function (i) {
+      track.scrollTo({ left: slides[i].offsetLeft - track.offsetLeft, behavior: 'smooth' });
+    };
+
+    dots.forEach(function (dot, i) {
+      dot.addEventListener('click', function () { goTo(i); });
+    });
+
+    var sync = function () {
+      var mid = track.scrollLeft + track.clientWidth / 2;
+      var active = 0;
+      slides.forEach(function (slide, i) {
+        var left = slide.offsetLeft - track.offsetLeft;
+        if (left <= mid) active = i;
+      });
+      dots.forEach(function (dot, i) {
+        dot.setAttribute('aria-selected', String(i === active));
+      });
+    };
+
+    var frame;
+    track.addEventListener('scroll', function () {
+      if (frame) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(sync);
     }, { passive: true });
-    top.addEventListener('click', function () {
+    sync();
+  });
+
+  /* ---- tabs -------------------------------------------------------------- */
+  document.querySelectorAll('.tabs').forEach(function (tabs) {
+    var buttons = [].slice.call(tabs.querySelectorAll('.tabs__tab'));
+    var panels = [].slice.call(tabs.querySelectorAll('.tabs__panel'));
+    if (!buttons.length) return;
+
+    var select = function (index) {
+      buttons.forEach(function (b, i) {
+        b.setAttribute('aria-selected', String(i === index));
+        b.setAttribute('tabindex', i === index ? '0' : '-1');
+      });
+      panels.forEach(function (panel, i) { panel.hidden = i !== index; });
+    };
+
+    buttons.forEach(function (button, i) {
+      button.addEventListener('click', function () { select(i); });
+      button.addEventListener('keydown', function (e) {
+        var next = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : null;
+        if (next === null) return;
+        e.preventDefault();
+        next = (next + buttons.length) % buttons.length;
+        buttons[next].focus();
+        select(next);
+      });
+    });
+
+    var initial = buttons.findIndex(function (b) { return b.getAttribute('aria-selected') === 'true'; });
+    select(initial < 0 ? 0 : initial);
+  });
+
+  /* ---- scroll to top ---------------------------------------------------- */
+  var toTop = document.querySelector('.to-top');
+  if (toTop) {
+    var sync = function () { toTop.classList.toggle('is-visible', window.scrollY > 400); };
+    window.addEventListener('scroll', sync, { passive: true });
+    sync();
+    toTop.addEventListener('click', function () {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
 
-  /* fake form handlers (static clone — no backend) */
-  function wireForm(id, noteId) {
-    var f = document.getElementById(id), note = document.getElementById(noteId);
-    if (!f || !note) return;
-    f.addEventListener('submit', function (e) {
+  /* ---- forms ------------------------------------------------------------
+     The original posts to WordPress via Metform + reCAPTCHA. This clone has no
+     backend, so submissions are intercepted and acknowledged in place rather
+     than failing silently against a dead endpoint. */
+  document.querySelectorAll('form[data-clone-form]').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
       e.preventDefault();
-      if (!f.checkValidity()) {
-        note.textContent = 'Please fill in all required fields.';
-        note.style.color = '#ffd9d9';
-        f.reportValidity();
-        return;
+      var status = form.querySelector('.form-status');
+      if (status) {
+        status.textContent = 'This is a static clone — the form is not connected to a backend.';
       }
-      note.textContent = 'Thank you! This is a static clone — no request was sent.';
-      note.style.color = '';
-      f.reset();
     });
-  }
-  wireForm('callback-form', 'cb-note');
-  wireForm('contact-form', 'ct-note');
-
-  /* reveal on scroll */
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var targets = document.querySelectorAll('.card, .priority, .feature-block, .about .lead, .priorities-head > div');
-  if (!reduce && 'IntersectionObserver' in window) {
-    targets.forEach(function (el) { el.classList.add('reveal'); });
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
-      });
-    }, { threshold: 0.12 });
-    targets.forEach(function (el) { io.observe(el); });
-  }
+  });
 })();
