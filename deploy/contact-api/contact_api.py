@@ -5,13 +5,13 @@ POST /api/contact  (JSON or form-encoded)  ->  200 {"ok": true}
                                             ->  4xx {"ok": false, "error": "..."}
 Validates, drops bots via the honeypot, and emails the submission over SMTP.
 Runs behind nginx on 127.0.0.1:8787 (see contact-api.service); nginx does rate limiting."""
-import json, os, re, smtplib, sys, time, html
+import json, os, re, smtplib, ssl, sys, time
 from email.message import EmailMessage
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs
 
 BIND = os.environ.get("BIND", "127.0.0.1"); PORT = int(os.environ.get("PORT", "8787"))
-SMTP_HOST = os.environ["SMTP_HOST"]; SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_HOST = os.environ.get("SMTP_HOST", ""); SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER = os.environ.get("SMTP_USER", ""); SMTP_PASS = os.environ.get("SMTP_PASS", "")
 MAIL_TO = os.environ.get("MAIL_TO", "ops@corazon-tech.com"); MAIL_FROM = os.environ.get("MAIL_FROM", MAIL_TO)
 ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "https://corazon-tech.com")
@@ -40,16 +40,25 @@ def validate(d):
     return {"name": name, "phone": phone, "email": email, "message": message,
             "page": clean(d.get("page"), 200), "form": clean(d.get("form"), 40)}, None
 
+def header_safe(v, limit=120):
+    """A header value may not carry CR/LF, or a submitted name could inject headers."""
+    return re.sub(r"[\r\n]", " ", (v or ""))[:limit].strip()
+
 def send(p, ip):
     m = EmailMessage()
-    m["Subject"] = f"Website enquiry from {p['name']}"
+    m["Subject"] = header_safe(f"Website enquiry from {p['name']}")
     m["From"] = MAIL_FROM; m["To"] = MAIL_TO
-    if p["email"]: m["Reply-To"] = p["email"]
+    if p["email"] and EMAIL_RE.match(p["email"]): m["Reply-To"] = header_safe(p["email"], 160)
     body = (f"Name:    {p['name']}\nPhone:   {p['phone'] or '-'}\nEmail:   {p['email'] or '-'}\n"
             f"Form:    {p['form'] or '-'}  on  {p['page'] or '-'}\nIP:      {ip}\n\n{p['message'] or '(no message — call back requested)'}\n")
     m.set_content(body)
+    ctx = ssl.create_default_context()          # verifies the relay's certificate
+    ctx.check_hostname = True
+    ctx.verify_mode = ssl.CERT_REQUIRED
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as s:
-        s.starttls()
+        s.ehlo()
+        s.starttls(context=ctx)                  # refuses to send in the clear
+        s.ehlo()
         if SMTP_USER: s.login(SMTP_USER, SMTP_PASS)
         s.send_message(m)
 
@@ -67,9 +76,15 @@ class H(BaseHTTPRequestHandler):
         if n > 32_000: return self._json(413, {"ok": False, "error": "too large"})
         raw = self.rfile.read(n)
         try:
-            if "json" in self.headers.get("Content-Type", ""): d = json.loads(raw or b"{}")
-            else: d = {k: v[0] for k, v in parse_qs(raw.decode("utf-8", "replace")).items()}
-        except Exception: return self._json(400, {"ok": False, "error": "bad request"})
+            if "json" in self.headers.get("Content-Type", ""):
+                d = json.loads(raw or b"{}")
+                if not isinstance(d, dict): raise ValueError("body is not an object")
+                d = {str(k): ("" if v is None else v if isinstance(v, (str, bool, int, float)) else "")
+                     for k, v in d.items()}
+            else:
+                d = {k: v[0] for k, v in parse_qs(raw.decode("utf-8", "replace")).items()}
+        except Exception:
+            return self._json(400, {"ok": False, "error": "bad request"})
         p, err = validate(d); ip = self.headers.get("X-Forwarded-For", self.client_address[0])
         if err == "spam": log("dropped honeypot hit from", ip); return self._json(200, {"ok": True})   # don't tip off bots
         if err: return self._json(422, {"ok": False, "error": err})
@@ -82,5 +97,9 @@ class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
 
 if __name__ == "__main__":
+    missing = [k for k in ("SMTP_HOST",) if not os.environ.get(k)]
+    if missing:
+        log("REFUSING TO START — missing environment:", ", ".join(missing), "(set them in /etc/contact-api.env)")
+        sys.exit(78)   # EX_CONFIG
     log(f"contact-api listening on {BIND}:{PORT}, mail to {MAIL_TO} via {SMTP_HOST}:{SMTP_PORT}")
     ThreadingHTTPServer((BIND, PORT), H).serve_forever()

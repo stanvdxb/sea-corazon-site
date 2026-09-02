@@ -1,36 +1,44 @@
 #!/usr/bin/env bash
-# One-time VPS setup for corazon-tech.com. Debian/Ubuntu, run as root, on the server.
-# Idempotent: safe to re-run. Never enables the firewall before SSH is permitted.
+# One-time VPS setup for corazon-tech.com. Ubuntu 24.04, run as root, from the repo root.
+# Idempotent and non-destructive: a re-run never takes a working HTTPS site offline,
+# and the firewall is never enabled before SSH is explicitly permitted.
 set -euo pipefail
 
 DOMAIN=corazon-tech.com
 EMAIL=ops@corazon-tech.com
 WEBROOT=/var/www/$DOMAIN
-SSH_PORT=$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}'); SSH_PORT=${SSH_PORT:-22}
+LIVE=/etc/letsencrypt/live/$DOMAIN
+SNIPPET=/etc/nginx/snippets/corazon-security-headers.conf
+AVAIL=/etc/nginx/sites-available/$DOMAIN.conf
 
-say() { printf '\n\033[1m>> %s\033[0m\n' "$*"; }
-[ "$(id -u)" -eq 0 ] || { echo "run as root"; exit 1; }
-[ -d deploy ] || { echo "run from the repo root (deploy/ not found)"; exit 1; }
+say()  { printf '\n\033[1m>> %s\033[0m\n' "$*"; }
+fail() { printf '\n\033[1;31mFATAL: %s\033[0m\n' "$*" >&2; exit 1; }
+[ "$(id -u)" -eq 0 ] || fail "run as root (sudo bash deploy/server-setup.sh)"
+[ -d deploy ] || fail "run from the repo root — deploy/ not found"
 
-# Non-interactive for the whole run: Ubuntu 24.04 ships needrestart, which otherwise
-# opens a curses prompt mid-upgrade and hangs an unattended SSH session.
-export DEBIAN_FRONTEND=noninteractive
-export NEEDRESTART_MODE=a
-export NEEDRESTART_SUSPEND=1
+# The SSH port must come from the RUNNING daemon. `sshd -T` needs root and can fail
+# on a non-standard config; an empty result must never silently become 22 when the
+# real port is different, so we fall back to the port of the current SSH session.
+SSH_PORT=$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}' || true)
+if [ -z "${SSH_PORT:-}" ] && [ -n "${SSH_CONNECTION:-}" ]; then SSH_PORT=$(awk '{print $4}' <<<"$SSH_CONNECTION"); fi
+SSH_PORT=${SSH_PORT:-22}
+case "$SSH_PORT" in ''|*[!0-9]*) fail "could not determine the SSH port (got '$SSH_PORT')";; esac
 
-say "OS updates: bringing the server fully up to date"
+export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a NEEDRESTART_SUSPEND=1
+
+say "OS updates"
 apt-get update -q
 apt-get -y -q -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold upgrade
 apt-get -y -q -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold dist-upgrade
 apt-get -y -q autoremove --purge
 apt-get -y -q autoclean
-echo "   $(dpkg -l | grep -c '^ii') packages installed, $(apt-get -s upgrade 2>/dev/null | grep -c '^Inst' || echo 0) still upgradable"
 
-say "packages this site needs"
+say "packages"
 apt-get install -y -q nginx certbot python3-certbot-nginx python3 rsync ufw curl \
-                      unattended-upgrades apt-listchanges fail2ban ca-certificates
+                      unattended-upgrades apt-listchanges fail2ban ca-certificates dnsutils
+nginx -v 2>&1 | sed 's/^/   /'
 
-say "ongoing security updates (unattended-upgrades)"
+say "ongoing security updates"
 cat > /etc/apt/apt.conf.d/20auto-upgrades <<'CONF'
 APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
@@ -38,9 +46,6 @@ APT::Periodic::Download-Upgradeable-Packages "1";
 APT::Periodic::AutocleanInterval "7";
 CONF
 cat > /etc/apt/apt.conf.d/51corazon-unattended <<'CONF'
-// Security updates apply themselves. A kernel or libc update needs a reboot;
-// this box serves static files, nginx and contact-api both start on boot, so a
-// 04:30 reboot costs a few seconds of downtime and keeps the kernel current.
 Unattended-Upgrade::Allowed-Origins {
     "${distro_id}:${distro_codename}";
     "${distro_id}:${distro_codename}-security";
@@ -54,110 +59,143 @@ Unattended-Upgrade::Automatic-Reboot-Time "04:30";
 Unattended-Upgrade::SyslogEnable "true";
 CONF
 systemctl enable --now unattended-upgrades >/dev/null 2>&1 || true
-unattended-upgrade --dry-run --debug 2>&1 | tail -3 | sed 's/^/   /' || true
 
-say "SSH brute-force protection (fail2ban)"
+say "fail2ban"
 cat > /etc/fail2ban/jail.d/corazon.local <<'CONF'
 [DEFAULT]
 bantime  = 1h
 findtime = 10m
 maxretry = 5
 backend  = systemd
-
 [sshd]
 enabled = true
 CONF
 systemctl enable --now fail2ban >/dev/null 2>&1 || true
-fail2ban-client status sshd 2>/dev/null | sed 's/^/   /' || echo "   fail2ban starting"
 
-say "directories"
-install -d -o www-data -g www-data "$WEBROOT" /var/www/certbot
-[ -f "$WEBROOT/index.html" ] || echo '<!doctype html><title>Sea Corazon</title><p>Deploying…' > "$WEBROOT/index.html"
-
-# ---------------------------------------------------------------- firewall
-# Rules are ALWAYS added before enabling, so an enable can never lock out SSH.
-say "firewall (ufw): allow SSH/$SSH_PORT, 80, 443 — then enable"
-ufw --force reset >/dev/null 2>&1 || true
-ufw default deny incoming
-ufw default allow outgoing
-ufw allow "$SSH_PORT"/tcp comment 'SSH'
-ufw allow 80/tcp  comment 'HTTP (ACME + redirect)'
-ufw allow 443/tcp comment 'HTTPS'
-ufw --force enable
-ufw status verbose
+say "firewall: allow SSH/$SSH_PORT, 80, 443 BEFORE enabling"
+ufw allow "$SSH_PORT"/tcp comment 'SSH'   >/dev/null
+ufw allow 80/tcp  comment 'HTTP (ACME + redirect)' >/dev/null
+ufw allow 443/tcp comment 'HTTPS' >/dev/null
+ufw default deny incoming  >/dev/null
+ufw default allow outgoing >/dev/null
+ufw --force enable >/dev/null
 for p in "$SSH_PORT" 80 443; do
-  ufw status | grep -qE "^${p}/tcp .*ALLOW" || { echo "FATAL: ufw is not allowing $p/tcp"; exit 1; }
+  ufw status | grep -qE "^${p}/tcp[[:space:]]+ALLOW" || fail "ufw is not allowing ${p}/tcp — refusing to continue"
 done
-echo "   ufw verified: $SSH_PORT, 80, 443 all ALLOW"
+ufw status | sed 's/^/   /'
+
+say "web root"
+install -d -o root -g root -m 755 "$WEBROOT"
+install -d -o root -g root -m 755 /var/www/certbot
+[ -e "$WEBROOT/index.html" ] || echo '<!doctype html><title>Sea Corazon</title><p>Deploying…' > "$WEBROOT/index.html"
 
 say "contact-form API"
 install -d /opt/contact-api
 install -m 644 deploy/contact-api/contact_api.py /opt/contact-api/contact_api.py
 install -m 644 deploy/contact-api/contact-api.service /etc/systemd/system/contact-api.service
+# never overwrite real credentials on a re-run
 if [ ! -f /etc/contact-api.env ]; then
   install -m 600 deploy/contact-api/contact-api.env.example /etc/contact-api.env
-  echo "   !! /etc/contact-api.env holds placeholders — real SMTP settings needed before forms work"
+  echo "   /etc/contact-api.env created from the template — real SMTP settings still needed"
+else
+  echo "   /etc/contact-api.env already present — left untouched"
 fi
 systemctl daemon-reload
 systemctl enable contact-api >/dev/null 2>&1 || true
-systemctl restart contact-api || echo "   !! contact-api not running yet (expected until SMTP is configured)"
+systemctl restart contact-api 2>/dev/null || echo "   contact-api not started (expected until credentials are set)"
 
-# ------------------------------------------------------- nginx, stage 1
-say "nginx stage 1: HTTP only, so the server answers and ACME can validate"
-rm -f /etc/nginx/sites-enabled/default
-install -m 644 deploy/nginx/bootstrap.conf /etc/nginx/sites-available/$DOMAIN.conf
-ln -sf /etc/nginx/sites-available/$DOMAIN.conf /etc/nginx/sites-enabled/$DOMAIN.conf
-nginx -t
-systemctl enable nginx >/dev/null 2>&1 || true
-systemctl restart nginx
-curl -fsS -o /dev/null -w '   local HTTP check: %{http_code}\n' http://127.0.0.1/ || { echo "FATAL: nginx not serving on 80"; exit 1; }
+say "security-header snippet"
+install -d /etc/nginx/snippets
+install -m 644 deploy/nginx/security-headers.conf "$SNIPPET"
 
-# ------------------------------------------------------------ certificate
-say "DNS preflight (a wrong record burns Let's Encrypt rate limits)"
-MYIP=$(curl -fsS --max-time 10 https://api.ipify.org || echo unknown)
-for host in "$DOMAIN" "www.$DOMAIN"; do
-  GOT=$(getent hosts "$host" | awk '{print $1}' | head -1)
-  echo "   $host -> ${GOT:-NXDOMAIN}   (this server: $MYIP)"
-  [ -n "$GOT" ] || { echo "FATAL: $host does not resolve. Add the A record, then re-run."; exit 1; }
-  [ "$GOT" = "$MYIP" ] || echo "   !! $host does not point here yet — certbot will fail if this is still true"
-done
-
-if [ -d "/etc/letsencrypt/live/$DOMAIN" ]; then
-  say "certificate already present — renewing only if due"
-  certbot renew --quiet || true
+# ---------------------------------------------------------------- certificate
+# Stage 1 is installed ONLY when there is no certificate yet. Re-running a live
+# server must never demote it to the HTTP-only bootstrap.
+if [ -s "$LIVE/fullchain.pem" ] && [ -s "$LIVE/privkey.pem" ]; then
+  say "certificate already present — leaving the live config in place"
+  certbot renew --quiet || echo "   (renew check reported an issue; continuing)"
 else
-  say "requesting the certificate (webroot, so nginx config is never rewritten)"
+  say "no certificate yet — DNS preflight"
+  MYIP=$(curl -fsS --max-time 10 https://api.ipify.org || true)
+  [ -n "$MYIP" ] || fail "could not determine this server's public IP"
+  echo "   this server: $MYIP"
+  BAD=0
+  for host in "$DOMAIN" "www.$DOMAIN"; do
+    GOT=$(dig +short A "$host" @1.1.1.1 2>/dev/null | tail -1)
+    printf '   %-24s -> %s\n' "$host" "${GOT:-NXDOMAIN}"
+    [ "$GOT" = "$MYIP" ] || BAD=1
+  done
+  # Running certbot against wrong DNS burns Let's Encrypt's 5 failed-validations/hour.
+  [ "$BAD" -eq 0 ] || fail "DNS does not point at this server yet. Add/fix the A records, then re-run. (certbot NOT attempted)"
+
+  say "nginx stage 1: HTTP only, so ACME can validate"
+  rm -f /etc/nginx/sites-enabled/default
+  install -m 644 deploy/nginx/bootstrap.conf "$AVAIL"
+  ln -sf "$AVAIL" /etc/nginx/sites-enabled/$DOMAIN.conf
+  nginx -t || fail "bootstrap config invalid"
+  systemctl enable nginx >/dev/null 2>&1 || true
+  systemctl restart nginx
+  curl -fsS -o /dev/null http://127.0.0.1/ || fail "nginx is not serving on port 80"
+
+  say "requesting the certificate"
+  # A half-created lineage (directory exists, no usable cert) otherwise wedges every
+  # future run; --force-renewal on an incomplete lineage cleans it up.
+  EXTRA=""
+  [ -d "$LIVE" ] && [ ! -s "$LIVE/fullchain.pem" ] && EXTRA="--force-renewal"
   certbot certonly --webroot -w /var/www/certbot \
     -d "$DOMAIN" -d "www.$DOMAIN" \
-    --non-interactive --agree-tos -m "$EMAIL" --no-eff-email
+    --non-interactive --agree-tos -m "$EMAIL" --no-eff-email $EXTRA \
+    || fail "certbot could not issue the certificate — see /var/log/letsencrypt/letsencrypt.log"
 fi
-[ -s "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] || { echo "FATAL: no certificate issued"; exit 1; }
-[ -f /etc/letsencrypt/options-ssl-nginx.conf ] || curl -fsS -o /etc/letsencrypt/options-ssl-nginx.conf https://raw.githubusercontent.com/certbot/certbot/main/certbot-nginx/certbot_nginx/_internal/tls_configs/options-ssl-nginx.conf
-[ -f /etc/letsencrypt/ssl-dhparams.pem ] || openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048
+[ -s "$LIVE/fullchain.pem" ] || fail "no certificate at $LIVE"
+
+# TLS helper files. Written atomically: an interrupted run must not leave a
+# zero-byte file that [ -f ] considers present and nginx -t chokes on.
+if [ ! -s /etc/letsencrypt/options-ssl-nginx.conf ]; then
+  SRC=$(dpkg -L python3-certbot-nginx 2>/dev/null | grep -m1 'options-ssl-nginx.conf$' || true)
+  [ -n "$SRC" ] || fail "options-ssl-nginx.conf not found in python3-certbot-nginx"
+  install -m 644 "$SRC" /etc/letsencrypt/options-ssl-nginx.conf
+fi
+if [ ! -s /etc/letsencrypt/ssl-dhparams.pem ]; then
+  openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem.tmp 2048
+  mv /etc/letsencrypt/ssl-dhparams.pem.tmp /etc/letsencrypt/ssl-dhparams.pem
+fi
+
+say "renewal hook — without this, nginx keeps serving the OLD certificate after renewal"
+install -d /etc/letsencrypt/renewal-hooks/deploy
+cat > /etc/letsencrypt/renewal-hooks/deploy/10-reload-nginx.sh <<'HOOK'
+#!/bin/sh
+# certbot runs this after a successful renewal. nginx only reads certificates at
+# start/reload, so without it the site serves the expired one until someone notices.
+/usr/sbin/nginx -t && /bin/systemctl reload nginx
+HOOK
+chmod 755 /etc/letsencrypt/renewal-hooks/deploy/10-reload-nginx.sh
 
 # ------------------------------------------------------- nginx, stage 2
-say "nginx stage 2: full config with TLS, headers, caching and the form proxy"
-install -m 644 deploy/nginx/$DOMAIN.conf /etc/nginx/sites-available/$DOMAIN.conf
-nginx -t
+say "nginx stage 2: TLS, headers, caching, form proxy"
+[ -f "$AVAIL" ] && cp -a "$AVAIL" "$AVAIL.prev" || true
+install -m 644 deploy/nginx/$DOMAIN.conf "$AVAIL"
+ln -sf "$AVAIL" /etc/nginx/sites-enabled/$DOMAIN.conf
+if ! nginx -t; then
+  [ -f "$AVAIL.prev" ] && mv "$AVAIL.prev" "$AVAIL" && nginx -t && systemctl reload nginx || true
+  fail "stage-2 config invalid — previous config restored"
+fi
+rm -f "$AVAIL.prev"
 systemctl reload nginx
 
-say "renewal"
-systemctl list-timers certbot.timer --no-pager 2>/dev/null | tail -2 || true
-certbot renew --dry-run --quiet && echo "   renewal dry-run OK"
-
-say "post-setup verification"
-curl -fsS -o /dev/null -w '   http://%{host} -> %{http_code} (expect 301)\n'  "http://$DOMAIN/"  || true
-curl -fsS -o /dev/null -w '   https://%{host} -> %{http_code}\n'              "https://$DOMAIN/" || true
-ss -tlnp 2>/dev/null | grep -E ':(80|443|8787)\b' | sed 's/^/   listening: /' || true
-ufw status | sed 's/^/   ufw: /'
-systemctl is-active --quiet unattended-upgrades && echo "   unattended-upgrades: active" || echo "   !! unattended-upgrades not active"
-systemctl is-active --quiet fail2ban && echo "   fail2ban: active" || echo "   !! fail2ban not active"
+say "verification"
+certbot renew --dry-run --quiet && echo "   renewal dry-run OK" || echo "   !! renewal dry-run FAILED"
+[ -x /etc/letsencrypt/renewal-hooks/deploy/10-reload-nginx.sh ] && echo "   renewal reload hook installed"
+printf '   http  -> %s (expect 301)\n' "$(curl -sS -o /dev/null -w '%{http_code}' -I "http://$DOMAIN/" || echo ERR)"
+printf '   https -> %s (expect 200)\n' "$(curl -sS -o /dev/null -w '%{http_code}' "https://$DOMAIN/" || echo ERR)"
+for u in nginx contact-api unattended-upgrades fail2ban; do
+  printf '   %-22s %s\n' "$u" "$(systemctl is-active "$u" 2>/dev/null || echo INACTIVE)"
+done
+ufw status | grep -E '^(80|443)/tcp' | sed 's/^/   ufw: /'
 
 if [ -f /var/run/reboot-required ]; then
-  say "A REBOOT IS PENDING (kernel or core library updated)"
-  cat /var/run/reboot-required.pkgs 2>/dev/null | sed 's/^/   /' || true
-  echo "   Nothing here reboots automatically mid-setup. Reboot when convenient:  sudo reboot"
-  echo "   nginx and contact-api are enabled, so the site returns on its own."
+  say "REBOOT PENDING"; cat /var/run/reboot-required.pkgs 2>/dev/null | sed 's/^/   /' || true
+  echo "   run 'sudo reboot' when convenient — nginx and contact-api restart on boot"
 else
   echo "   no reboot required"
 fi

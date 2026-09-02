@@ -209,6 +209,8 @@
       if (name.length < 2) return invalid(f.name, 'Please enter your name.');
       if (!phone && !email) return invalid(f.phone || f.email, 'Please give a phone number or an email address.');
       if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) return invalid(f.email, 'That email address doesn\u2019t look right.');
+      if (phone && !/^\+?[\d\s().-]{6,24}$/.test(phone)) return invalid(f.phone, 'That phone number doesn\u2019t look right.');
+      if (f.message && f.message.value.length > 4000) return invalid(f.message, 'Please shorten your message to 4000 characters or fewer.');
       if (f.consent && !f.consent.checked) return invalid(f.consent, 'Please agree to the terms and conditions.');
       form.querySelectorAll('[aria-invalid]').forEach(function (x) { x.removeAttribute('aria-invalid'); });
 

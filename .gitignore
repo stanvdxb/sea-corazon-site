@@ -18,3 +18,12 @@
 
 # Python
 __pycache__/
+
+# Credentials — never commit
+*.env
+.env
+.env.*
+!deploy/contact-api/contact-api.env.example
+*.pem
+*.key
+id_ed25519*
