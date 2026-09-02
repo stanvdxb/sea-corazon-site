@@ -368,7 +368,7 @@ html { accent-color: var(--blue); caret-color: var(--blue); }
   font-size: 18px;
   color: var(--white);
 }
-.breadcrumb a { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--white); }
+.breadcrumb a { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap); min-width: var(--tap); padding-inline: .35em; color: var(--white); }
 .breadcrumb a:hover { color: var(--blue); }
 .breadcrumb li + li::before { content: "\2197"; margin-right: .5em; color: var(--blue); }
 
@@ -663,7 +663,7 @@ textarea.field { min-height: 46px; resize: vertical; }
 .form-consent input { width: 22px; height: 22px; margin: 0; accent-color: var(--blue); flex: none; }
 .form-consent label { cursor: pointer; }
 .form-consent a { color: var(--blue); }
-.form-status { margin-top: 1em; font-size: 14px; }
+.form-status { margin-top: 1em; font-size: 15px; }
 
 /* --------------------------------------------------------------------------
    19. Footer
@@ -760,7 +760,7 @@ textarea.field { min-height: 46px; resize: vertical; }
   .topbar__contact a, .topbar__contact li { font-size: 14px; }
   .topbar__brand { font-size: 14px; }
 
-  .masthead__logo img { height: 42px; }
+  .masthead__logo img { height: 44px; }
   .nav__toggle { display: block; }
   .nav__list {
     position: absolute;
