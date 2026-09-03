@@ -94,6 +94,15 @@ patches apply on their own, with automatic reboot at 04:30 when a kernel or libc
 nginx and `contact-api` are enabled at boot, so the site returns by itself. `fail2ban` guards SSH.
 Neither setup nor update ever reboots while you are watching; a pending reboot is reported instead.
 
+**Cloudflare.** The domain is proxied through Cloudflare, so: the certificate is issued and renewed
+over **DNS-01** (`deploy/set-cloudflare-token.sh` installs a `Zone:DNS:Edit` token — HTTP-01 is
+unreliable behind a proxy and fails at renewal months later); nginx recovers the real visitor IP from
+`CF-Connecting-IP` via `deploy/nginx/cloudflare-realip.conf`, without which the per-IP rate limit on
+the form would throttle every visitor as one; and Cloudflare's SSL/TLS mode must be **Full (strict)**
+once the origin certificate exists. `deploy/cloudflare-ranges.sh` refreshes the edge ranges, and with
+`--ufw` prints rules that restrict 80/443 to Cloudflare only (optional; it makes grey-clouding a
+record an outage).
+
 **Firewall.** `ufw` allows SSH, 80 and 443 — added *before* the firewall is enabled, so enabling can
 never lock out the session — and setup aborts if any of the three is missing afterwards. `deploy.sh`
 re-checks 80/443 after every deploy. Hetzner's separate *cloud* firewall lives in their web console and

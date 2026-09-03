@@ -38,11 +38,13 @@ rsync -az --delete --human-readable --rsync-path="sudo rsync" \
 echo ">> sync the form API and header snippet, then reload"
 scp -q deploy/contact-api/contact_api.py "$TARGET:/tmp/contact_api.py"
 scp -q deploy/nginx/security-headers.conf "$TARGET:/tmp/corazon-security-headers.conf"
+scp -q deploy/nginx/cloudflare-realip.conf "$TARGET:/tmp/cloudflare-realip.conf"
 ssh "$TARGET" "
   set -e
   sudo install -m 644 /tmp/contact_api.py /opt/contact-api/contact_api.py
   sudo install -m 644 /tmp/corazon-security-headers.conf /etc/nginx/snippets/corazon-security-headers.conf
-  rm -f /tmp/contact_api.py /tmp/corazon-security-headers.conf
+  sudo install -m 644 /tmp/cloudflare-realip.conf /etc/nginx/snippets/cloudflare-realip.conf
+  rm -f /tmp/contact_api.py /tmp/corazon-security-headers.conf /tmp/cloudflare-realip.conf
   sudo chown -R root:root $WEBROOT && sudo find $WEBROOT -type d -exec chmod 755 {} + && sudo find $WEBROOT -type f -exec chmod 644 {} +
   sudo nginx -t
   sudo systemctl reload nginx

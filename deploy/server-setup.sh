@@ -34,7 +34,7 @@ apt-get -y -q autoremove --purge
 apt-get -y -q autoclean
 
 say "packages"
-apt-get install -y -q nginx certbot python3-certbot-nginx python3 rsync ufw curl \
+apt-get install -y -q nginx certbot python3-certbot-nginx python3-certbot-dns-cloudflare python3 rsync ufw curl \
                       unattended-upgrades apt-listchanges fail2ban ca-certificates dnsutils
 nginx -v 2>&1 | sed 's/^/   /'
 
@@ -107,6 +107,7 @@ systemctl restart contact-api 2>/dev/null || echo "   contact-api not started (e
 say "security-header snippet"
 install -d /etc/nginx/snippets
 install -m 644 deploy/nginx/security-headers.conf "$SNIPPET"
+install -m 644 deploy/nginx/cloudflare-realip.conf /etc/nginx/snippets/cloudflare-realip.conf
 
 # ---------------------------------------------------------------- certificate
 # Stage 1 is installed ONLY when there is no certificate yet. Re-running a live
@@ -115,37 +116,58 @@ if [ -s "$LIVE/fullchain.pem" ] && [ -s "$LIVE/privkey.pem" ]; then
   say "certificate already present — leaving the live config in place"
   certbot renew --quiet || echo "   (renew check reported an issue; continuing)"
 else
-  say "no certificate yet — DNS preflight"
-  MYIP=$(curl -fsS --max-time 10 https://api.ipify.org || true)
-  [ -n "$MYIP" ] || fail "could not determine this server's public IP"
-  echo "   this server: $MYIP"
-  BAD=0
-  for host in "$DOMAIN" "www.$DOMAIN"; do
-    GOT=$(dig +short A "$host" @1.1.1.1 2>/dev/null | tail -1)
-    printf '   %-24s -> %s\n' "$host" "${GOT:-NXDOMAIN}"
-    [ "$GOT" = "$MYIP" ] || BAD=1
-  done
-  # Running certbot against wrong DNS burns Let's Encrypt's 5 failed-validations/hour.
-  [ "$BAD" -eq 0 ] || fail "DNS does not point at this server yet. Add/fix the A records, then re-run. (certbot NOT attempted)"
+  CF_INI=/etc/letsencrypt/cloudflare.ini
+  if [ -s "$CF_INI" ]; then
+    # ---- DNS-01. Works with the Cloudflare proxy on, at issuance AND at every
+    #      renewal, which HTTP-01 does not. The A record may legitimately point
+    #      at Cloudflare rather than at this server, so no IP match is required.
+    say "certificate via DNS-01 (Cloudflare token found)"
+    chmod 600 "$CF_INI"; chown root:root "$CF_INI"
+    for host in "$DOMAIN" "www.$DOMAIN"; do
+      GOT=$(dig +short A "$host" @1.1.1.1 2>/dev/null | tail -1)
+      printf '   %-24s -> %s\n' "$host" "${GOT:-NXDOMAIN}"
+      [ -n "$GOT" ] || fail "$host does not resolve at all — add the record in Cloudflare, then re-run"
+    done
+    EXTRA=""
+    [ -d "$LIVE" ] && [ ! -s "$LIVE/fullchain.pem" ] && EXTRA="--force-renewal"
+    certbot certonly --dns-cloudflare --dns-cloudflare-credentials "$CF_INI" \
+      --dns-cloudflare-propagation-seconds 30 \
+      -d "$DOMAIN" -d "www.$DOMAIN" \
+      --non-interactive --agree-tos -m "$EMAIL" --no-eff-email $EXTRA \
+      || fail "certbot DNS-01 failed — check the token scope (Zone:DNS:Edit on $DOMAIN) and /var/log/letsencrypt/letsencrypt.log"
+  else
+    # ---- HTTP-01 fallback, for a server that is NOT behind a proxy.
+    say "no Cloudflare token at $CF_INI — falling back to HTTP-01"
+    MYIP=$(curl -fsS --max-time 10 https://api.ipify.org || true)
+    [ -n "$MYIP" ] || fail "could not determine this server's public IP"
+    echo "   this server: $MYIP"
+    BAD=0
+    for host in "$DOMAIN" "www.$DOMAIN"; do
+      GOT=$(dig +short A "$host" @1.1.1.1 2>/dev/null | tail -1)
+      printf '   %-24s -> %s\n' "$host" "${GOT:-NXDOMAIN}"
+      [ "$GOT" = "$MYIP" ] || BAD=1
+    done
+    [ "$BAD" -eq 0 ] || fail "DNS does not point at this server, and there is no Cloudflare token for DNS-01.
+   Either run deploy/set-cloudflare-token.sh first (correct when the domain is proxied),
+   or point the A records straight at $MYIP. certbot was NOT attempted."
 
-  say "nginx stage 1: HTTP only, so ACME can validate"
-  rm -f /etc/nginx/sites-enabled/default
-  install -m 644 deploy/nginx/bootstrap.conf "$AVAIL"
-  ln -sf "$AVAIL" /etc/nginx/sites-enabled/$DOMAIN.conf
-  nginx -t || fail "bootstrap config invalid"
-  systemctl enable nginx >/dev/null 2>&1 || true
-  systemctl restart nginx
-  curl -fsS -o /dev/null http://127.0.0.1/ || fail "nginx is not serving on port 80"
+    say "nginx stage 1: HTTP only, so ACME can validate"
+    rm -f /etc/nginx/sites-enabled/default
+    install -m 644 deploy/nginx/bootstrap.conf "$AVAIL"
+    ln -sf "$AVAIL" /etc/nginx/sites-enabled/$DOMAIN.conf
+    nginx -t || fail "bootstrap config invalid"
+    systemctl enable nginx >/dev/null 2>&1 || true
+    systemctl restart nginx
+    curl -fsS -o /dev/null http://127.0.0.1/ || fail "nginx is not serving on port 80"
 
-  say "requesting the certificate"
-  # A half-created lineage (directory exists, no usable cert) otherwise wedges every
-  # future run; --force-renewal on an incomplete lineage cleans it up.
-  EXTRA=""
-  [ -d "$LIVE" ] && [ ! -s "$LIVE/fullchain.pem" ] && EXTRA="--force-renewal"
-  certbot certonly --webroot -w /var/www/certbot \
-    -d "$DOMAIN" -d "www.$DOMAIN" \
-    --non-interactive --agree-tos -m "$EMAIL" --no-eff-email $EXTRA \
-    || fail "certbot could not issue the certificate — see /var/log/letsencrypt/letsencrypt.log"
+    say "requesting the certificate"
+    EXTRA=""
+    [ -d "$LIVE" ] && [ ! -s "$LIVE/fullchain.pem" ] && EXTRA="--force-renewal"
+    certbot certonly --webroot -w /var/www/certbot \
+      -d "$DOMAIN" -d "www.$DOMAIN" \
+      --non-interactive --agree-tos -m "$EMAIL" --no-eff-email $EXTRA \
+      || fail "certbot could not issue the certificate — see /var/log/letsencrypt/letsencrypt.log"
+  fi
 fi
 [ -s "$LIVE/fullchain.pem" ] || fail "no certificate at $LIVE"
 
@@ -173,6 +195,8 @@ chmod 755 /etc/letsencrypt/renewal-hooks/deploy/10-reload-nginx.sh
 
 # ------------------------------------------------------- nginx, stage 2
 say "nginx stage 2: TLS, headers, caching, form proxy"
+rm -f /etc/nginx/sites-enabled/default
+systemctl enable nginx >/dev/null 2>&1 || true
 [ -f "$AVAIL" ] && cp -a "$AVAIL" "$AVAIL.prev" || true
 install -m 644 deploy/nginx/$DOMAIN.conf "$AVAIL"
 ln -sf "$AVAIL" /etc/nginx/sites-enabled/$DOMAIN.conf
