@@ -104,6 +104,8 @@ fi
 echo "  accepted: $DETAIL"
 
 umask 077
+# certbot may not be installed yet, so its config directory may not exist.
+install -d -o root -g root -m 755 /etc/letsencrypt
 TMP=$(mktemp /etc/letsencrypt/cloudflare.ini.XXXXXX)
 printf 'dns_cloudflare_api_token = %s\n' "$TOKEN" > "$TMP"
 chown root:root "$TMP"; chmod 600 "$TMP"; mv "$TMP" "$INI"
