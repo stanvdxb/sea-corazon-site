@@ -17,6 +17,7 @@ echo
 
 read -rp "Directory (tenant) ID : " TENANT
 read -rp "Application (client) ID: " CLIENT
+echo "(the secret will not appear as you type — paste it ONCE, then press Enter)"
 read -rsp "Client secret VALUE    : " RAWSECRET; echo
 read -rp  "Send mail AS (mailbox) [ops@corazon-tech.com]: " SENDER; SENDER=${SENDER:-ops@corazon-tech.com}
 read -rp  "Deliver mail TO        [ops@corazon-tech.com]: " TO;     TO=${TO:-ops@corazon-tech.com}
@@ -45,9 +46,17 @@ fi
 if [ "${#SECRET}" -gt 60 ]; then
   echo
   echo "That is ${#SECRET} characters. An Entra client secret Value is about 40."
-  echo "The copy has picked up extra text from the portal — usually the secret's"
-  echo "Description, Expires date or Secret ID from the same table row."
-  echo "Select only the Value cell and copy just that."; exit 1
+  if [ $(( ${#SECRET} % 40 )) -lt 6 ] || [ $(( ${#SECRET} % 44 )) -lt 6 ]; then
+    echo
+    echo "That length looks like the value pasted more than once. Nothing appears"
+    echo "on screen while you type — that is deliberate, not a failed paste."
+    echo "Paste once, then press Enter even though the line still looks empty."
+  else
+    echo "The copy has picked up extra text from the portal — usually the secret's"
+    echo "Description, Expires date or Secret ID from the same table row."
+    echo "Select only the Value cell and copy just that."
+  fi
+  exit 1
 fi
 if [ "${#SECRET}" -lt 20 ]; then
   echo
