@@ -30,7 +30,7 @@ grep -q "$LOCAL_HASH" deploy/nginx/security-headers.conf \
 
 echo ">> sync site (rsync elevates on the far side; the web root is root-owned)"
 rsync -az --delete --human-readable --rsync-path="sudo rsync" \
-  --exclude '.git' --exclude '.firecrawl' --exclude 'deploy' --exclude 'README.md' \
+  --exclude '.git' --exclude '.firecrawl' --exclude 'deploy' --exclude 'README.md' --exclude 'README.TXT' \
   --exclude '.claude' --exclude '.impeccable' --exclude '.playwright-mcp' \
   --exclude '.DS_Store' --exclude '__pycache__' --exclude '.gitignore' \
   ./ "$TARGET:$WEBROOT/" || { echo "rsync failed"; exit 1; }
