@@ -55,32 +55,53 @@ if [ "$LEN" -lt 30 ] || [ "$LEN" -gt 80 ]; then
 fi
 
 echo "Verifying the token with Cloudflare..."
-VERIFY=$(curl -sS --max-time 20 -H "Authorization: Bearer $TOKEN" \
-  https://api.cloudflare.com/client/v4/user/tokens/verify || true)
-if ! grep -q '"success":true' <<<"$VERIFY"; then
-  echo "Cloudflare rejected the token:"
-  echo "$VERIFY" | head -c 400; echo
-  case "$VERIFY" in
-    *6111*|*"Invalid format for Authorization"*)
-      echo
-      echo "Code 6111 means the token string itself is malformed, not that the"
-      echo "permissions are wrong. The value that reached Cloudflare was not a"
-      echo "well-formed token — most often the token NAME, an Account ID, or a"
-      echo "partial copy. Create a fresh token and copy the Value column." ;;
-    *1000*|*"Invalid API Token"*)
-      echo
-      echo "The token is well-formed but not recognised. It may have been revoked,"
-      echo "or belong to a different Cloudflare account." ;;
-  esac
+
+# A token created under "Account API tokens" is NOT verifiable at /user/tokens/verify —
+# that endpoint only knows user-owned tokens and answers 1000 "Invalid API Token" for an
+# account-owned one, which looks identical to a genuinely bad token. Try the checks that
+# actually matter, in order, and accept the token if any of them proves it works.
+OK=0; DETAIL=""
+
+# 1. user-owned token
+V=$(curl -sS --max-time 20 -H "Authorization: Bearer $TOKEN" \
+      https://api.cloudflare.com/client/v4/user/tokens/verify 2>/dev/null || true)
+grep -q '"success":true' <<<"$V" && { OK=1; DETAIL="user-owned token, active"; }
+
+# 2. account-owned token, if an account id is known or supplied
+if [ "$OK" -eq 0 ]; then
+  ACC="${CF_ACCOUNT_ID:-}"
+  if [ -z "$ACC" ]; then
+    read -rp "Cloudflare Account ID (blank to skip): " ACC
+    ACC=$(printf '%s' "$ACC" | tr -d '[:space:]')
+  fi
+  if [ -n "$ACC" ]; then
+    V=$(curl -sS --max-time 20 -H "Authorization: Bearer $TOKEN" \
+          "https://api.cloudflare.com/client/v4/accounts/$ACC/tokens/verify" 2>/dev/null || true)
+    grep -q '"success":true' <<<"$V" && { OK=1; DETAIL="account-owned token, active"; }
+  fi
+fi
+
+# 3. the capability we actually need: can it see the zone?
+Z=$(curl -sS --max-time 20 -H "Authorization: Bearer $TOKEN" \
+      "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN" 2>/dev/null || true)
+if grep -q '"success":true' <<<"$Z" && grep -q "\"name\":\"$DOMAIN\"" <<<"$Z"; then
+  OK=1; DETAIL="${DETAIL:+$DETAIL; }can read the $DOMAIN zone"
+fi
+
+if [ "$OK" -eq 0 ]; then
+  echo "Cloudflare did not accept the token."
+  echo "  verify endpoint said: $(head -c 200 <<<"$V")"
+  echo "  zone lookup said:     $(head -c 200 <<<"$Z")"
+  echo
+  echo "If this token was created under 'Account API tokens', supply the Account ID"
+  echo "when prompted (or set CF_ACCOUNT_ID before running) so the right endpoint is used."
+  echo "Otherwise the token may have been rolled, revoked, or scoped to another zone."
+  echo
+  echo "Note: this token is restricted to client IP 2.28.46.26, so it can only be"
+  echo "verified from the server itself — running these checks elsewhere will fail."
   exit 1
 fi
-echo "  token is valid and active"
-
-ZONES=$(curl -sS --max-time 20 -H "Authorization: Bearer $TOKEN" \
-  "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN" || true)
-grep -q '"success":true' <<<"$ZONES" && grep -q "\"name\":\"$DOMAIN\"" <<<"$ZONES" \
-  && echo "  token can see the $DOMAIN zone" \
-  || { echo "  the token is valid but cannot see $DOMAIN — check Zone Resources includes this zone"; exit 1; }
+echo "  accepted: $DETAIL"
 
 umask 077
 TMP=$(mktemp /etc/letsencrypt/cloudflare.ini.XXXXXX)
