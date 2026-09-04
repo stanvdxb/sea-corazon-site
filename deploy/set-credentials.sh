@@ -17,17 +17,42 @@ echo
 
 read -rp "Directory (tenant) ID : " TENANT
 read -rp "Application (client) ID: " CLIENT
-read -rsp "Client secret VALUE    : " SECRET; echo
+read -rsp "Client secret VALUE    : " RAWSECRET; echo
 read -rp  "Send mail AS (mailbox) [ops@corazon-tech.com]: " SENDER; SENDER=${SENDER:-ops@corazon-tech.com}
 read -rp  "Deliver mail TO        [ops@corazon-tech.com]: " TO;     TO=${TO:-ops@corazon-tech.com}
 
-for pair in "TENANT:$TENANT" "CLIENT:$CLIENT" "SECRET:$SECRET"; do
+# Strip whitespace a paste can carry, then sanity-check the SHAPE — never the value.
+TENANT=$(printf '%s' "$TENANT" | tr -d '[:space:]')
+CLIENT=$(printf '%s' "$CLIENT" | tr -d '[:space:]')
+SECRET=$(printf '%s' "$RAWSECRET" | tr -d '[:space:]'); unset RAWSECRET
+
+for pair in "Tenant ID:$TENANT" "Client ID:$CLIENT" "Client secret:$SECRET"; do
   [ -n "${pair#*:}" ] || { echo "${pair%%:*} cannot be empty"; exit 1; }
 done
-# A common mistake: pasting the secret's ID instead of its Value. IDs are GUIDs.
-if [[ "$SECRET" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
-  echo; echo "That looks like a GUID — you have probably copied the secret's *ID*."
-  echo "Go back and copy the *Value* column instead (it is shown only once, right after creation)."; exit 1
+
+GUID='^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+[[ "$TENANT" =~ $GUID ]] || { echo "Tenant ID should be a GUID; got ${#TENANT} characters."; exit 1; }
+[[ "$CLIENT" =~ $GUID ]] || { echo "Client ID should be a GUID; got ${#CLIENT} characters."; exit 1; }
+
+echo "  secret received: ${#SECRET} characters"
+if [[ "$SECRET" =~ $GUID ]]; then
+  echo
+  echo "That is a GUID — it is the client secret's ID, not its Value."
+  echo "In Entra: Certificates & secrets > Client secrets > the VALUE column."; exit 1
+fi
+# An Entra client secret value is ~31-44 characters. Anything far outside that is
+# a paste that swallowed neighbouring text (the description, expiry, or the ID).
+if [ "${#SECRET}" -gt 60 ]; then
+  echo
+  echo "That is ${#SECRET} characters. An Entra client secret Value is about 40."
+  echo "The copy has picked up extra text from the portal — usually the secret's"
+  echo "Description, Expires date or Secret ID from the same table row."
+  echo "Select only the Value cell and copy just that."; exit 1
+fi
+if [ "${#SECRET}" -lt 20 ]; then
+  echo
+  echo "That is only ${#SECRET} characters — an Entra client secret Value is about 40."
+  echo "It looks truncated; copy the whole Value."; exit 1
 fi
 
 umask 077

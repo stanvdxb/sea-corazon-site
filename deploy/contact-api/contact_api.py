@@ -83,8 +83,21 @@ def graph_token():
         req = urllib.request.Request(
             f"https://login.microsoftonline.com/{GRAPH_TENANT}/oauth2/v2.0/token",
             data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
-        with urllib.request.urlopen(req, timeout=20, context=ssl.create_default_context()) as r:
-            tok = json.loads(r.read())
+        try:
+            with urllib.request.urlopen(req, timeout=20, context=ssl.create_default_context()) as r:
+                tok = json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            # Entra answers with a JSON body naming the exact AADSTS code. Without it
+            # a bare 401 is indistinguishable between a bad secret, a wrong tenant and
+            # a wrong client id — three different fixes.
+            raw = e.read().decode("utf-8", "replace")
+            try:
+                err = json.loads(raw)
+                code = err.get("error", "?")
+                desc = (err.get("error_description") or "").split("\r\n")[0]
+            except Exception:
+                code, desc = "?", raw[:300]
+            raise RuntimeError(f"token request failed [{e.code} {code}] {desc}") from None
         _token["value"] = tok["access_token"]
         _token["expires"] = time.time() + int(tok.get("expires_in", 3600))
         return _token["value"]
